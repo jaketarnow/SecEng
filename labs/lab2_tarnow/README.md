@@ -1,4 +1,15 @@
 # Lab 2
+## How to Install/Run
+Must have:
+
+1. Python >=2.7
+2. pip to install all library dependencies
+3. Flask
+4. OpenSSL
+5. MySQL
+
+Set up MySQL DB and run MySQL Server. Clone the repo and run python app.py. You will notice the IP address and that the app is running on HTTPS. Enjoy!
+
 ## Basis
 The idea behind this implementation was that I wanted to build a web app using Python and Flask as I had not done that in the past before.
 The way that I implmeneted the app is that a when a user visits the site, if they have no session already live, then they will be prompted to the sign in page. 
