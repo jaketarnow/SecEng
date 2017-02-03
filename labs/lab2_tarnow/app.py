@@ -4,7 +4,7 @@ import MySQLdb
 
 app = Flask(__name__)
 
-app.secret_key = 'A0Zr98j/3yX R~XHH!jmN]LWX/,?RT'
+app.secret_key = os.urandom(24).encode('hex')
 
 if __name__ == "__main__":
 	db = MySQLdb.connect(host="localhost", user="root", passwd="root", db="cs683")
