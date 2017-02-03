@@ -1,8 +1,12 @@
 from flask import Flask, render_template, request, redirect, url_for, session, escape
+from OpenSSL import SSL
 import hashlib
 import MySQLdb
 import os
 
+context = SSL.Context(SSL.SSLv23_METHOD)
+cer = os.path.join(os.path.dirname(__file__), 'certificate.crt')
+key = os.path.join(os.path.dirname(__file__), 'privateKey.key')
 app = Flask(__name__)
 
 app.secret_key = os.urandom(24).encode('hex')
@@ -64,4 +68,5 @@ def logout():
 	return redirect(url_for("main"))
 
 if __name__ == "__main__":
-	app.run(host='0.0.0.0', debug = True)
+	context = (cer, key)
+	app.run(host='0.0.0.0', debug = True, ssl_context=context)
