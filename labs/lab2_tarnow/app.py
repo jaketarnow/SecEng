@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, session, escape
 import hashlib
 import MySQLdb
+import os
 
 app = Flask(__name__)
 
@@ -23,8 +24,6 @@ def main():
 def signup():
 	username_form = request.form["username"]
 	password_form = request.form["password"]
-	print(username_form)
-	print(password_form)
 	hash_object = hashlib.sha256(password_form)
 	hex_dig = hash_object.hexdigest()
 	password_form = hex_dig
@@ -65,4 +64,4 @@ def logout():
 	return redirect(url_for("main"))
 
 if __name__ == "__main__":
-	app.run(debug = True)
+	app.run(host='0.0.0.0', debug = True)
