@@ -9,3 +9,10 @@ Plus I like the way that sessions deals with multiple pages being open at once a
 
 ## Packet Sniff Results
 Through Wireshark we were able to see the username and hashed password fly in the cookies on the initial sign up/login. Yet, once a session was activated then the cookies would only hold the session id and nothing else. It is amazing to see how insecure the Internet is when it comes to HTTP instead of using SSL and HTTPS.
+
+## Adding SSL
+Using OpenSSl to generate a self-signed key and certificate you can call:
+```
+> openssl req -x509 -sha256 -nodes -days 365 -newkey rsa:2048 -keyout privateKey.key -out certificate.crt
+```
+From there you can import SSL from OpenSSL to make your webapp HTTPS.  
