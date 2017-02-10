@@ -17,12 +17,13 @@ def scrape_pcap(text):
 
 	for ts, buf in pcap:
 		eth = dpkt.ethernet.Ethernet(buf)
-	ip = eth.data
-	tcp = ip.data
+		ip = eth.data
+		tcp = ip.data
 
 	if tcp.dport == 80 and len(tcp.data) > 0:
 		http = dpkt.http.Request(tcp.data)
-	print http.headers['user-agent']
+		print http.headers['user-agent']
+	f.close()
 	return http.headers['user-agent']
 
 if __name__ == "__main__":
