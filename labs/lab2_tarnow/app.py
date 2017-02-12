@@ -39,8 +39,8 @@ def signup():
 		db.commit()
 	except MySQLdb.IntegrityError:
 		raise ServerError("Invalid sql insert")
-	cookie["session"] = username_form
-	session['authenticated'] = True
+	cookie["username"] = username_form
+	#session['authenticated'] = True
 	return redirect(url_for("main"))
 
 @app.route('/login', methods=["GET", "POST"])
@@ -59,7 +59,7 @@ def login():
 
 			for row in cur.fetchall():
 				if hashlib.sha256(password_form).hexdigest() == row[2]:
-					cookie["session"] = username_form
+					cookie["username"] = username_form
 					session['authenticated'] = True
 					return redirect(url_for("main"))
 	except ServerError as se:
