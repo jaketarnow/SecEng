@@ -1,6 +1,5 @@
 #!/usr/bin/python
 import sys
-import dpkt
 import urllib2
 import re
 
