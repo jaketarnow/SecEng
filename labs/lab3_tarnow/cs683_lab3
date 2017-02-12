@@ -1,0 +1,57 @@
+GET / HTTP/1.1
+Host: 10.0.0.17:5000
+Connection: keep-alive
+Cache-Control: max-age=0
+Upgrade-Insecure-Requests: 1
+User-Agent: Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
+Referer: http://10.0.0.17:5000/login
+Accept-Encoding: gzip, deflate, sdch
+Accept-Language: en-US,en;q=0.8
+Cookie: session=eyJhdXRoZW50aWNhdGVkIjp0cnVlfQ.C4F56w.0Vu0yovN5UCFH7UHNJLfCHrEkdA
+
+HTTP/1.0 200 OK
+Content-Type: text/html; charset=utf-8
+Content-Length: 158
+Server: Werkzeug/0.11.15 Python/2.7.10
+Date: Sun, 12 Feb 2017 04:45:31 GMT
+
+<!DOCTYPE html>
+<html>
+<head>
+<title>Login</title>
+</head>
+<body align="center">
+I have your identity!!!
+<br><br>
+<a href="/logout">Logout</a>
+</body>
+</html>GET / HTTP/1.1
+Host: 10.0.0.17:5000
+Connection: keep-alive
+Cache-Control: max-age=0
+Upgrade-Insecure-Requests: 1
+User-Agent: Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
+Referer: http://10.0.0.17:5000/login
+Accept-Encoding: gzip, deflate, sdch
+Accept-Language: en-US,en;q=0.8
+Cookie: session=eyJhdXRoZW50aWNhdGVkIjp0cnVlfQ.C4F56w.0Vu0yovN5UCFH7UHNJLfCHrEkdA
+
+HTTP/1.0 200 OK
+Content-Type: text/html; charset=utf-8
+Content-Length: 158
+Server: Werkzeug/0.11.15 Python/2.7.10
+Date: Sun, 12 Feb 2017 04:45:31 GMT
+
+<!DOCTYPE html>
+<html>
+<head>
+<title>Login</title>
+</head>
+<body align="center">
+I have your identity!!!
+<br><br>
+<a href="/logout">Logout</a>
+</body>
+</html>
