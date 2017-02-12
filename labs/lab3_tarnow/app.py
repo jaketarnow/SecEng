@@ -1,17 +1,16 @@
 #!/usr/bin/python
-
 import sys
+import dpkt
 
 def main():
-    # print command line arguments
-    for arg in sys.argv[1:3]:
-        if ".txt" in sys.argv[1]:
-        	text = sys.argv[1]
-        if "http://" in sys.argv[2]:
-        	req_url = sys.argv[2]
-    scrape_pcap(text)
+	for arg in sys.argv[1:3]:
+		if ".pcap" in sys.argv[1]:
+			text = sys.argv[1]
+		if "http://" in sys.argv[2]:
+			req_url = sys.argv[2]
+	print parse_pcap(text)
 
-def scrape_pcap(text):
+def parse_pcap(text):
 	f = open(text)
 	pcap = dpkt.pcap.Reader(f)
 
@@ -27,4 +26,4 @@ def scrape_pcap(text):
 	return http.headers['user-agent']
 
 if __name__ == "__main__":
-    main()
+	main()
