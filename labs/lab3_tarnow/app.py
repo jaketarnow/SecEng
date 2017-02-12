@@ -23,11 +23,11 @@ def parse_pcap(text):
 	return null
 
 def build_html(cookie, url):
-	req = urllib2.Request(url)
-	req.add_header("Cookie", cookie)
-	resp = urllib2.urlopen(req)
-	content = resp.read()
-	return content
+	request = urllib2.Request(url)
+	request.add_header('Cookie', cookie)
+	response = urllib2.urlopen(request)
+	print response.read()
+	return response
 
 if __name__ == "__main__":
 	main()
