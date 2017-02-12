@@ -27,7 +27,7 @@ def build_html(cookie, url):
 	req.add_header("Cookie", cookie)
 	resp = urllib2.urlopen(req)
 	content = resp.read()
-	print content
+	return content
 
 if __name__ == "__main__":
 	main()
