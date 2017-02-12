@@ -3,13 +3,15 @@ from OpenSSL import SSL
 import hashlib
 import MySQLdb
 import os
+import Cookie
 
-context = SSL.Context(SSL.SSLv23_METHOD)
-cer = os.path.join(os.path.dirname(__file__), 'certificate.crt')
-key = os.path.join(os.path.dirname(__file__), 'privateKey.key')
+#context = SSL.Context(SSL.SSLv23_METHOD)
+#cer = os.path.join(os.path.dirname(__file__), 'certificate.crt')
+#key = os.path.join(os.path.dirname(__file__), 'privateKey.key')
 app = Flask(__name__)
 
 app.secret_key = os.urandom(24).encode('hex')
+cookie = Cookie.SimpleCookie()
 
 if __name__ == "__main__":
 	db = MySQLdb.connect(host="localhost", user="root", passwd="root", db="cs683")
@@ -37,6 +39,7 @@ def signup():
 		db.commit()
 	except MySQLdb.IntegrityError:
 		raise ServerError("Invalid sql insert")
+	cookie["session"] = username_form
 	session['authenticated'] = True
 	return redirect(url_for("main"))
 
@@ -56,6 +59,7 @@ def login():
 
 			for row in cur.fetchall():
 				if hashlib.sha256(password_form).hexdigest() == row[2]:
+					cookie["session"] = username_form
 					session['authenticated'] = True
 					return redirect(url_for("main"))
 	except ServerError as se:
@@ -68,5 +72,6 @@ def logout():
 	return redirect(url_for("main"))
 
 if __name__ == "__main__":
-	context = (cer, key)
-	app.run(host='0.0.0.0', debug = True, ssl_context=context)
+	#context = (cer, key)
+	#app.run(host='0.0.0.0', debug = True, ssl_context=context)
+	app.run(host='0.0.0.0', debug = True)
