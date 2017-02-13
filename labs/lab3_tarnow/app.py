@@ -18,9 +18,8 @@ def parse_pcap(text):
 	while True:
 		reader = f.readline()
 		if 'Cookie' in reader:
-			reader = reader.replace('\r', '')
-			cookie = re.findall(r'(?:\s+|$)[a-zA-Z].*', reader)
-			print cookie
+			reader = reader.replace("Cookie:", "")
+			cookie = reader.replace('\r\n', '')
 			return cookie
 			break
 	return null
