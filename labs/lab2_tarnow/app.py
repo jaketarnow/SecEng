@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, escape
+from flask import Flask, render_template, request, redirect, url_for, session, escape, make_response
 from OpenSSL import SSL
 import hashlib
 import MySQLdb
@@ -11,7 +11,6 @@ import Cookie
 app = Flask(__name__)
 
 app.secret_key = os.urandom(24).encode('hex')
-cookie = Cookie.SimpleCookie()
 
 if __name__ == "__main__":
 	db = MySQLdb.connect(host="localhost", user="root", passwd="root", db="cs683")
@@ -21,7 +20,8 @@ class ServerError(Exception):pass
 
 @app.route('/')
 def main():
-	if session.get('authenticated'):
+	user_id = request.cookies.get('userID')
+	if user_id is not None:
 		return render_template("index.html")
 	else:
 		return render_template("signup.html")
@@ -39,9 +39,10 @@ def signup():
 		db.commit()
 	except MySQLdb.IntegrityError:
 		raise ServerError("Invalid sql insert")
-	cookie["username"] = username_form
+	resp = make_response(redirect(url_for("main")))
+	resp.set_cookie('userID', username_form)
 	#session['authenticated'] = True
-	return redirect(url_for("main"))
+	return resp
 
 @app.route('/login', methods=["GET", "POST"])
 def login():
@@ -59,17 +60,18 @@ def login():
 
 			for row in cur.fetchall():
 				if hashlib.sha256(password_form).hexdigest() == row[2]:
-					cookie["username"] = username_form
-					session['authenticated'] = True
-					return redirect(url_for("main"))
+					resp = make_response(redirect(url_for("main")))
+					resp.set_cookie('userID', username_form)
+					return resp
 	except ServerError as se:
 		error = str(se)
 	return render_template("login.html")
 
 @app.route('/logout')
 def logout():
-	session['authenticated'] = False
-	return redirect(url_for("main"))
+	resp = make_response(redirect(url_for("main")))
+	resp.set_cookie('userID', '', expires=0)
+	return resp
 
 if __name__ == "__main__":
 	#context = (cer, key)
