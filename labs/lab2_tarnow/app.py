@@ -6,9 +6,9 @@ import os
 import Cookie
 import datetime
 
-#context = SSL.Context(SSL.SSLv23_METHOD)
-#cer = os.path.join(os.path.dirname(__file__), 'certificate.crt')
-#key = os.path.join(os.path.dirname(__file__), 'privateKey.key')
+context = SSL.Context(SSL.SSLv23_METHOD)
+cer = os.path.join(os.path.dirname(__file__), 'certificate.crt')
+key = os.path.join(os.path.dirname(__file__), 'privateKey.key')
 app = Flask(__name__)
 
 app.secret_key = os.urandom(24).encode('hex')
@@ -74,6 +74,6 @@ def logout():
 	return render_template("signup.html")
 
 if __name__ == "__main__":
-	#context = (cer, key)
-	#app.run(host='0.0.0.0', debug = True, ssl_context=context)
-	app.run(host='0.0.0.0', debug = True)
+	context = (cer, key)
+	app.run(host='0.0.0.0', debug = True, ssl_context=context)
+	#app.run(host='0.0.0.0', debug = True)
