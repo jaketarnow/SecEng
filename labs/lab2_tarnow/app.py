@@ -4,6 +4,7 @@ import hashlib
 import MySQLdb
 import os
 import Cookie
+import datetime
 
 #context = SSL.Context(SSL.SSLv23_METHOD)
 #cer = os.path.join(os.path.dirname(__file__), 'certificate.crt')
@@ -21,7 +22,7 @@ class ServerError(Exception):pass
 @app.route('/')
 def main():
 	user_id = request.cookies.get('userID')
-	if user_id is not None:
+	if user_id:
 		return render_template("index.html")
 	else:
 		return render_template("signup.html")
@@ -41,7 +42,6 @@ def signup():
 		raise ServerError("Invalid sql insert")
 	resp = make_response(redirect(url_for("main")))
 	resp.set_cookie('userID', username_form)
-	#session['authenticated'] = True
 	return resp
 
 @app.route('/login', methods=["GET", "POST"])
@@ -61,7 +61,9 @@ def login():
 			for row in cur.fetchall():
 				if hashlib.sha256(password_form).hexdigest() == row[2]:
 					resp = make_response(redirect(url_for("main")))
-					resp.set_cookie('userID', username_form)
+					expire_date = datetime.datetime.now()
+					expire_date = expire_date + datetime.timedelta(days=1)
+					resp.set_cookie('userID', username_form, expires=expire_date)
 					return resp
 	except ServerError as se:
 		error = str(se)
@@ -69,9 +71,7 @@ def login():
 
 @app.route('/logout')
 def logout():
-	resp = make_response(redirect(url_for("main")))
-	resp.set_cookie('userID', '', expires=0)
-	return resp
+	return render_template("signup.html")
 
 if __name__ == "__main__":
 	#context = (cer, key)
