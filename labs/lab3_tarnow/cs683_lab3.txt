@@ -1,11 +1,9 @@
 GET / HTTP/1.1
 Host: 10.0.0.17:5000
 Connection: keep-alive
-Cache-Control: max-age=0
 Upgrade-Insecure-Requests: 1
 User-Agent: Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36
 Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
-Referer: http://10.0.0.17:5000/login
 Accept-Encoding: gzip, deflate, sdch
 Accept-Language: en-US,en;q=0.8
 Cookie: userID=jake
@@ -14,7 +12,7 @@ HTTP/1.0 200 OK
 Content-Type: text/html; charset=utf-8
 Content-Length: 158
 Server: Werkzeug/0.11.15 Python/2.7.10
-Date: Mon, 13 Feb 2017 02:10:15 GMT
+Date: Mon, 13 Feb 2017 02:46:56 GMT
 
 <!DOCTYPE html>
 <html>
@@ -29,11 +27,9 @@ I have your identity!!!
 </html>GET / HTTP/1.1
 Host: 10.0.0.17:5000
 Connection: keep-alive
-Cache-Control: max-age=0
 Upgrade-Insecure-Requests: 1
 User-Agent: Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36
 Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
-Referer: http://10.0.0.17:5000/login
 Accept-Encoding: gzip, deflate, sdch
 Accept-Language: en-US,en;q=0.8
 Cookie: userID=jake
@@ -42,7 +38,7 @@ HTTP/1.0 200 OK
 Content-Type: text/html; charset=utf-8
 Content-Length: 158
 Server: Werkzeug/0.11.15 Python/2.7.10
-Date: Mon, 13 Feb 2017 02:10:15 GMT
+Date: Mon, 13 Feb 2017 02:46:56 GMT
 
 <!DOCTYPE html>
 <html>
