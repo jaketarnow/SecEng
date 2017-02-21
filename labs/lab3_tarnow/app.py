@@ -6,10 +6,12 @@ import requests
 import cookielib
 
 def main():
+	# Optional - grab from pcap file. Automate to parse via multiple pcap files
+	# Given cookie to url - pairing/matching
 	for arg in sys.argv[1:3]:
 		if ".txt" in sys.argv[1]:
 			text = sys.argv[1]
-		if "https://" in sys.argv[2]:
+		if "http://" in sys.argv[2]:
 			req_url = sys.argv[2]
 	print build_html(parse_pcap(text), req_url)
 
