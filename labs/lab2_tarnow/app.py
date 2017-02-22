@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, session, escape, make_response
 from OpenSSL import SSL
+from Crypto.PublicKey import RSA
 import hashlib
 import MySQLdb
 import os
@@ -34,12 +35,14 @@ def main():
 def signup():
 	username_form = request.form["username"]
 	password_form = request.form["password"]
-	hash_object = hashlib.sha256(password_form)
-	hex_dig = hash_object.hexdigest()
-	password_form = hex_dig
+	pubKeyGeneration()
+	pub_key = readPubKey()
+
+	password_form = hashIt(password_form)
+
 	cookie_create = hashlib.sha256(username_form + password_form).hexdigest()
 	try:
-		sql = "INSERT INTO users (username, password, cookies) VALUES ('%s', '%s', '%s')" %(username_form, password_form, cookie_create)
+		sql = "INSERT INTO users (username, password, pubkey, cookies) VALUES ('%s', '%s', '%s', '%s')" %(username_form, password_form, pub_key, cookie_create)
 		cur.execute(sql)
 		db.commit()
 	except MySQLdb.IntegrityError:
@@ -54,6 +57,7 @@ def login():
 		if request.method == "POST":
 			username_form = request.form["username"]
 			password_form = request.form["password"]
+			password_form = readKey().encrypt(hashIt(password_form), 32)
 
 			try:
 				sql = "SELECT * FROM users WHERE username = '%s'" %(username_form)
@@ -63,11 +67,16 @@ def login():
 				raise ServerError("Invalid")
 
 			for row in cur.fetchall():
-				if hashlib.sha256(password_form).hexdigest() == row[2]:
+				# Decrypt password
+				pubKey = row[4]
+				print pubKey
+				decryptPwd = pubKey.decrypt(password_form, 32)
+
+				if decryptPwd == row[2]:
 					resp = make_response(redirect(url_for("main")))
-					expire_date = datetime.datetime.now()
-					expire_date = expire_date + datetime.timedelta(days=1)
-					resp.set_cookie('userID', row[3], expires=expire_date)
+					#expire_date = datetime.datetime.now()
+					#expire_date = expire_date + datetime.timedelta(days=1)
+					resp.set_cookie('userID', row[3], expires=0)
 					return resp
 	except ServerError as se:
 		error = str(se)
@@ -82,6 +91,30 @@ def verifyCookie(userCookie):
 	except MySQLdb.IntegrityError:
 		raise ServerError("Invalid sql insert")
 	return False
+
+def pubKeyGeneration():
+	key = RSA.generate(2048)
+	f = open('userKey.pem', 'w')
+	f.write(key.exportKey('PEM'))
+	f.close()
+	return key
+
+def readPubKey():
+	f = open('userKey.pem', 'r')
+	key = RSA.importKey(f.read())
+	return key.publickey()
+
+def readKey():
+	f = open('userKey.pem', 'r')
+	key = RSA.importKey(f.read())
+	return key
+
+def hashIt(hashme):
+	hashed = hashme
+	hash_object = hashlib.sha256(hashed)
+	hex_dig = hash_object.hexdigest()
+	hashed = hex_dig
+	return hashed
 
 @app.route('/logout')
 def logout():
