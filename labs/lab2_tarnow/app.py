@@ -90,4 +90,4 @@ def logout():
 if __name__ == "__main__":
 	#context = (cer, key)
 	#app.run(host='0.0.0.0', debug = True, ssl_context=context)
-	app.run(host='0.0.0.0', debug = True)
+	app.run(host='0.0.0.0', port=8080, debug = True)
