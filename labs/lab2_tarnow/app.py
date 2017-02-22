@@ -35,14 +35,12 @@ def main():
 def signup():
 	username_form = request.form["username"]
 	password_form = request.form["password"]
-	pubKeyGeneration()
-	pub_key = readPubKey()
 
 	password_form = hashIt(password_form)
 
 	cookie_create = hashlib.sha256(username_form + password_form).hexdigest()
 	try:
-		sql = "INSERT INTO users (username, password, pubkey, cookies) VALUES ('%s', '%s', '%s', '%s')" %(username_form, password_form, pub_key, cookie_create)
+		sql = "INSERT INTO users (username, password, pubkey, cookies) VALUES ('%s', '%s', '%s', '%s')" %(username_form, password_form, privKeyGeneration().publickey().exportKey(), cookie_create)
 		cur.execute(sql)
 		db.commit()
 	except MySQLdb.IntegrityError:
@@ -58,7 +56,7 @@ def login():
 			username_form = request.form["username"]
 			password_form = request.form["password"]
 			password_form = readKey().encrypt(hashIt(password_form), 32)
-
+			print password_form
 			try:
 				sql = "SELECT * FROM users WHERE username = '%s'" %(username_form)
 				cur.execute(sql)
@@ -68,9 +66,8 @@ def login():
 
 			for row in cur.fetchall():
 				# Decrypt password
-				pubKey = row[4]
-				print pubKey
-				decryptPwd = pubKey.decrypt(password_form, 32)
+				pubkey = RSA.importKey(row[4])
+				decryptPwd = pubkey.decrypt(password_form)
 
 				if decryptPwd == row[2]:
 					resp = make_response(redirect(url_for("main")))
@@ -92,14 +89,14 @@ def verifyCookie(userCookie):
 		raise ServerError("Invalid sql insert")
 	return False
 
-def pubKeyGeneration():
+def privKeyGeneration():
 	key = RSA.generate(2048)
 	f = open('userKey.pem', 'w')
 	f.write(key.exportKey('PEM'))
 	f.close()
 	return key
 
-def readPubKey():
+def getPubKey():
 	f = open('userKey.pem', 'r')
 	key = RSA.importKey(f.read())
 	return key.publickey()
