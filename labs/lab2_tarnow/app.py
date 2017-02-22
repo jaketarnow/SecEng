@@ -67,6 +67,7 @@ def login():
 			for row in cur.fetchall():
 				# Decrypt password
 				pubkey = RSA.importKey(row[4])
+				# Throws error that its not the private key
 				decryptPwd = pubkey.decrypt(password_form)
 
 				if decryptPwd == row[2]:
