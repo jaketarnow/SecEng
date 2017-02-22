@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, session, escape, make_response
 from OpenSSL import SSL
 from Crypto.PublicKey import RSA
+from Crypto.Cipher import PKCS1_OAEP
 import hashlib
 import MySQLdb
 import os
@@ -67,6 +68,8 @@ def login():
 			for row in cur.fetchall():
 				# Decrypt password
 				pubkey = RSA.importKey(row[4])
+				# Attempt to add padding for decryption
+				pubkey = PKCS1_OAEP.new(pubkey)
 				# Throws error that its not the private key
 				decryptPwd = pubkey.decrypt(password_form)
 
