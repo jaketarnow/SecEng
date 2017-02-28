@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, e
 from OpenSSL import SSL
 from Crypto.PublicKey import RSA
 from Crypto.Cipher import PKCS1_OAEP
+from base64 import b64decode
 import hashlib
 import MySQLdb
 import os
@@ -74,9 +75,15 @@ def login():
 				# Throws error that its not the private key
 				# Encrypt and decrypt are same math... if you encrypt with private you can decrypt using encrypt with public
 				decryptKey = RSA.importKey(row[4])
-				# cipher = PKCS1_OAEP.new(decryptKey)
-				decryptPwd = decryptKey.decrypt(hashedPwd)
-				if decryptPwd == row[2]:
+				privkey = RSA.importKey(newkey)
+				print decryptKey.can_encrypt()
+				print privkey.can_encrypt()
+				# decryptPwd = decryptKey.encrypt(hashedPwd)
+				signature = RSA.importKey(newkey).sign(hashedPwd, '')
+				print signature
+				verify = decryptKey.verify(row[2], signature)
+				print verify
+				if verify:
 					resp = make_response(redirect(url_for("main")))
 					#expire_date = datetime.datetime.now()
 					#expire_date = expire_date + datetime.timedelta(days=1)
