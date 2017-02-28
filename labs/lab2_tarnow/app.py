@@ -36,12 +36,12 @@ def main():
 def signup():
 	username_form = request.form["username"]
 	password_form = request.form["password"]
-
 	password_form = hashIt(password_form)
-
+	pub_key = request.form["pubkey"]
+	newpubkey = readToTxt(pub_key)
 	cookie_create = hashlib.sha256(username_form + password_form).hexdigest()
 	try:
-		sql = "INSERT INTO users (username, password, pubkey, cookies) VALUES ('%s', '%s', '%s', '%s')" %(username_form, password_form, privKeyGeneration().publickey().exportKey(), cookie_create)
+		sql = "INSERT INTO users (username, password, pubkey, cookies) VALUES ('%s', '%s', '%s', '%s')" %(username_form, password_form, newpubkey, cookie_create)
 		cur.execute(sql)
 		db.commit()
 	except MySQLdb.IntegrityError:
@@ -56,8 +56,11 @@ def login():
 		if request.method == "POST":
 			username_form = request.form["username"]
 			password_form = request.form["password"]
-			password_form = readKey().encrypt(hashIt(password_form), 32)
-			print password_form
+			key = request.form["key"]
+			newkey = readToTxt(key)
+			# Encrypted with private key 
+			hashedPwd = RSA.importKey(newkey).encrypt(hashIt(password_form), 32)
+			print hashedPwd
 			try:
 				sql = "SELECT * FROM users WHERE username = '%s'" %(username_form)
 				cur.execute(sql)
@@ -67,16 +70,17 @@ def login():
 
 			for row in cur.fetchall():
 				# Decrypt password
-				pubkey = RSA.importKey(row[4])
 				# Attempt to add padding for decryption
-				pubkey = PKCS1_OAEP.new(pubkey)
 				# Throws error that its not the private key
-				decryptPwd = pubkey.decrypt(password_form)
-
+				# Encrypt and decrypt are same math... if you encrypt with private you can decrypt using encrypt with public
+				decryptKey = RSA.importKey(row[4])
+				# cipher = PKCS1_OAEP.new(decryptKey)
+				decryptPwd = decryptKey.decrypt(hashedPwd)
 				if decryptPwd == row[2]:
 					resp = make_response(redirect(url_for("main")))
 					#expire_date = datetime.datetime.now()
 					#expire_date = expire_date + datetime.timedelta(days=1)
+					# Only valid cookie for this instance
 					resp.set_cookie('userID', row[3], expires=0)
 					return resp
 	except ServerError as se:
@@ -88,27 +92,18 @@ def verifyCookie(userCookie):
 		sql = "SELECT username FROM users WHERE cookies = '%s'" %(userCookie)
 		cur.execute(sql)
 		db.commit()
-		return True
+		if cur.rowcount > 0:
+			return True
+		else:
+			return False
 	except MySQLdb.IntegrityError:
 		raise ServerError("Invalid sql insert")
 	return False
 
-def privKeyGeneration():
-	key = RSA.generate(2048)
-	f = open('userKey.pem', 'w')
-	f.write(key.exportKey('PEM'))
-	f.close()
-	return key
-
-def getPubKey():
-	f = open('userKey.pem', 'r')
-	key = RSA.importKey(f.read())
-	return key.publickey()
-
-def readKey():
-	f = open('userKey.pem', 'r')
-	key = RSA.importKey(f.read())
-	return key
+def readToTxt(file):
+	f = open(file, 'r')
+	pem = f.read()
+	return pem
 
 def hashIt(hashme):
 	hashed = hashme
@@ -119,7 +114,9 @@ def hashIt(hashme):
 
 @app.route('/logout')
 def logout():
-	return render_template("signup.html")
+	resp = make_response(redirect(url_for("main")))
+	resp.set_cookie('userID', expires=0)
+	return resp
 
 if __name__ == "__main__":
 	#context = (cer, key)

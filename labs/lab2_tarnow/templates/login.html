@@ -5,9 +5,11 @@
 </head>
 <body align="center">
     <form action="/login" method="POST">
-        Username: <input type="text" name="username">
+        Username: <input type="text" name="username" required>
         <br>
-        Password: <input type="password" name="password">
+        Password: <input type="password" name="password" required>
+        <br>
+        Encryption Key: <input type="file" name="key" accept=".pem" required>
         <br>
         <input type="Submit" value="Login">
     </form>

@@ -4,11 +4,12 @@
 <title>Sign Up</title>
 </head>
 <body align="center">
-    <form action="/signup" method="POST">
+    <form action="/signup" onsubmit="myFunction()" method="POST">
         Username: <input type="text" name="username">
         <br>
         Password: <input type="password" name="password">
         <br>
+        Public Key: <input type="file" name="pubkey" accept=".pem" required>
         <input type="Submit" value="Sign Up">
     </form>
 </body>
