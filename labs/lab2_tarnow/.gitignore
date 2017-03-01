@@ -41,6 +41,7 @@ htmlcov/
 .coverage.*
 .cache
 nosetests.xml
+.zip
 coverage.xml
 *,cover
 .hypothesis/
@@ -91,3 +92,8 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+# Crypto
+.key
+.pem
+.crt
