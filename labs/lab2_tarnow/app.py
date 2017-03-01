@@ -58,8 +58,7 @@ def login():
 			print hashing
 			key = request.form["key"]
 			newkey = readToTxt(key)
-			# # Encrypted with private key 
-			# print hashIt(password_form)
+			# Decrypt with private key, then encrypt with public key
 			hashedPwd = RSA.importKey(newkey).decrypt(hashIt(password_form))
 			try:
 				sql = "SELECT * FROM users WHERE username = '%s'" %(username_form)
@@ -69,19 +68,8 @@ def login():
 				raise ServerError("Invalid")
 
 			for row in cur.fetchall():
-				# Decrypt password
-				# Attempt to add padding for decryption
-				# Throws error that its not the private key
 				# Encrypt and decrypt are same math... if you encrypt with private you can decrypt using encrypt with public
-				# import private key
-				# signature = RSA.importKey(newkey).sign(hashedPwd, '')
-				# print signature
-				# import public key
-				# verify = RSA.importKey(row[4]).verify(row[2], signature)
-				# print verify
-				# actual decryption 
 				# hashedPwd = RSA.importKey(newkey).decrypt("This is a test.")
-				# print hashedPwd
 				decryptPwd = RSA.importKey(row[4]).encrypt(hashedPwd, None)
 				# print decryptPwd[0]
 				# print decryptPwd[0] == row[2]
@@ -89,7 +77,7 @@ def login():
 					resp = make_response(redirect(url_for("main")))
 					# expire_date = datetime.datetime.now()
 					# expire_date = expire_date + datetime.timedelta(days=1)
-					# Only valid cookie for this instance
+					# Only valid cookie for 30 seconds
 					resp.set_cookie('userID', row[3], max_age=30)
 					return resp
 	except ServerError as se:
@@ -122,6 +110,7 @@ def hashIt(hashme):
 @app.route('/logout')
 def logout():
 	resp = make_response(redirect(url_for("main")))
+	# When logout, set expires to 0, so it is not valid anymore
 	resp.set_cookie('userID', expires=0)
 	return resp
 
