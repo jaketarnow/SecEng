@@ -21,7 +21,9 @@
 <script type="text/javascript" >
 function encryptData() {
     var decrypt = new JSEncrypt();
-    decrypt.setPrivateKey(document.getElementById("key"));
+    //decrypt.setPrivateKey(document.getElementById("key"));
+    decrypt.setPrivateKey($('#key').val());
+    console.log(decrypt);
     if (decrypt != null) {
         console.log("true");
     }
@@ -30,7 +32,6 @@ function encryptData() {
     console.log(pw.value);
 	var hash = hashIt(pw);
 	console.log(hash);
-
 
 	var encryptedMessage = decrypt.decrypt(hash);
     console.log(encryptedMessage);
