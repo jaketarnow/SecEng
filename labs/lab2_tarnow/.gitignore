@@ -94,6 +94,6 @@ ENV/
 .ropeproject
 
 # Crypto
-.key
-.pem
-.crt
+*.key
+*.pem
+*.crt
