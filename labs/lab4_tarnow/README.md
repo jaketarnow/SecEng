@@ -7,6 +7,10 @@ When the user wants to log into ZBoxlive.com, he or she types in username and pa
 **ZBoxlive.com is vulnerable to replay attack. Explain the details of the replay attack in README.**
 **Modify your website to prevent replay attack. Hint: every login message should be fresh**
 
+### Libraries Used
+* [PyCrypto RSA](https://www.dlitz.net/software/pycrypto/api/current/Crypto.PublicKey.RSA-module.html)
+* [JSEncrypt](https://github.com/travist/jsencrypt)
+* [jsSHA](https://github.com/Caligatio/jsSHA)
 ### How It Works
 After un-zipping the file, go to lab2 and run
 ```
