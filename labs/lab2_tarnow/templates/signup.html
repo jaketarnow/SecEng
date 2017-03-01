@@ -5,12 +5,13 @@
 </head>
 <body align="center">
     <form action="/signup" onsubmit="myFunction()" method="POST">
-        Username: <input type="text" name="username">
+        Username: <input type="text" name="username" required>
         <br>
-        Password: <input type="password" name="password">
+        Password: <input type="password" name="password" required>
         <br>
         Public Key: <input type="file" name="pubkey" accept=".pem" required>
         <input type="Submit" value="Sign Up">
     </form>
+    <i>Your public key will be saved within our database.</i>
 </body>
 </html>

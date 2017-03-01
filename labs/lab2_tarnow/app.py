@@ -1,8 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, session, escape, make_response
 from OpenSSL import SSL
 from Crypto.PublicKey import RSA
-from Crypto.Cipher import PKCS1_OAEP
-from base64 import b64decode
 import hashlib
 import MySQLdb
 import os
@@ -26,7 +24,6 @@ class ServerError(Exception):pass
 def main():
 	# Fix with personalized cookie - for Step 4
 	# Verify if cookie exists in db
-	print request.cookies.get('userID')
 	user_id = verifyCookie(request.cookies.get('userID'))
 	if user_id:
 		return render_template("index.html")
@@ -48,7 +45,7 @@ def signup():
 	except MySQLdb.IntegrityError:
 		raise ServerError("Invalid sql insert")
 	resp = make_response(redirect(url_for("main")))
-	resp.set_cookie('userID', cookie_create)
+	resp.set_cookie('userID', cookie_create, max_age=30)
 	return resp
 
 @app.route('/login', methods=["GET", "POST"])
@@ -60,8 +57,8 @@ def login():
 			key = request.form["key"]
 			newkey = readToTxt(key)
 			# Encrypted with private key 
-			hashedPwd = RSA.importKey(newkey).encrypt(hashIt(password_form), 32)
-			print hashedPwd
+			print hashIt(password_form)
+			hashedPwd = RSA.importKey(newkey).decrypt(hashIt(password_form))
 			try:
 				sql = "SELECT * FROM users WHERE username = '%s'" %(username_form)
 				cur.execute(sql)
@@ -74,21 +71,24 @@ def login():
 				# Attempt to add padding for decryption
 				# Throws error that its not the private key
 				# Encrypt and decrypt are same math... if you encrypt with private you can decrypt using encrypt with public
-				decryptKey = RSA.importKey(row[4])
-				privkey = RSA.importKey(newkey)
-				print decryptKey.can_encrypt()
-				print privkey.can_encrypt()
-				# decryptPwd = decryptKey.encrypt(hashedPwd)
-				signature = RSA.importKey(newkey).sign(hashedPwd, '')
-				print signature
-				verify = decryptKey.verify(row[2], signature)
-				print verify
-				if verify:
+				# import private key
+				# signature = RSA.importKey(newkey).sign(hashedPwd, '')
+				# print signature
+				# import public key
+				# verify = RSA.importKey(row[4]).verify(row[2], signature)
+				# print verify
+				# actual decryption 
+				# hashedPwd = RSA.importKey(newkey).decrypt("This is a test.")
+				# print hashedPwd
+				decryptPwd = RSA.importKey(row[4]).encrypt(hashedPwd, None)
+				# print decryptPwd[0]
+				# print decryptPwd[0] == row[2]
+				if decryptPwd[0] == row[2]:
 					resp = make_response(redirect(url_for("main")))
-					#expire_date = datetime.datetime.now()
-					#expire_date = expire_date + datetime.timedelta(days=1)
+					# expire_date = datetime.datetime.now()
+					# expire_date = expire_date + datetime.timedelta(days=1)
 					# Only valid cookie for this instance
-					resp.set_cookie('userID', row[3], expires=0)
+					resp.set_cookie('userID', row[3], max_age=30)
 					return resp
 	except ServerError as se:
 		error = str(se)
@@ -101,8 +101,6 @@ def verifyCookie(userCookie):
 		db.commit()
 		if cur.rowcount > 0:
 			return True
-		else:
-			return False
 	except MySQLdb.IntegrityError:
 		raise ServerError("Invalid sql insert")
 	return False
