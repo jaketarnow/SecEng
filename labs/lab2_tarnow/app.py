@@ -54,10 +54,12 @@ def login():
 		if request.method == "POST":
 			username_form = request.form["username"]
 			password_form = request.form["password"]
+			hashing = request.form["decryption"]
+			print hashing
 			key = request.form["key"]
 			newkey = readToTxt(key)
-			# Encrypted with private key 
-			print hashIt(password_form)
+			# # Encrypted with private key 
+			# print hashIt(password_form)
 			hashedPwd = RSA.importKey(newkey).decrypt(hashIt(password_form))
 			try:
 				sql = "SELECT * FROM users WHERE username = '%s'" %(username_form)
