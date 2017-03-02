@@ -43,6 +43,9 @@ So, instead of just encrypt decrypt...why not decrypt then encrypt as it does th
 
 In previous commits, I generated the public and private key from the server, but felt this was very insecure as the server will have the private key for a short period of time. 
 
+### Vulnerabilites
+The replay attack can still happen in the beginning if you are able to grab the file that they add on the client side. Also, if you keep the cookie after the logout, then it's possible for a replay attack. Thus, I created the cookie to only be valid for 30seconds and kill the cookie on the logout. Thus, each new login is a new cookie. 
+
 ### Edits to Lab3
 Fixed lab3 to parse a .pcap file and grab the cookies from the headers.
 I realized that the past pcap files were not pulling in all the HTTP requests/responses because of the host address that I was using. I edited this and it is fully working now. 
