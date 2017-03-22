@@ -9,6 +9,7 @@ import datetime
 import json
 import requests
 import codecs
+import bs4
 
 #context = SSL.Context(SSL.SSLv23_METHOD)
 #cer = os.path.join(os.path.dirname(__file__), 'certificate.crt')
@@ -88,7 +89,7 @@ def login():
 			print hashedPwd
 			# encode hashedPwd 
 			url = 'http://0.0.0.0:8081/api/login'
-			jData = {'username' : username_form, 'crypto' : hashedPwd.encode('utf-8')}
+			jData = {'username' : username_form, 'crypto' : hashedPwd}
 			headers = {'Content-type': 'application/json'}
 			print "printing data at position 2"
 			try:
@@ -100,12 +101,25 @@ def login():
 			data = json.loads(Jresponse)
 
 			if data['success'] == True:
+				editHTML(username_form)
 				resp = make_response(redirect(url_for("main")))
 				resp.set_cookie('userID', data['cookie'], max_age=30)
 			return resp
 	except ServerError as se:
 		error = str(se)
 	return render_template("login.html")
+
+def editHTML(user_name):
+	with open("/templates/index.html") as inf:
+		txt = inf.read()
+		soup = bs4.BeautifulSoup(txt)
+	# create new elem
+	original_tag = soup.p
+	original_tag.append(user_name)
+	# save file again
+	with open("/templates/index.html", "w") as outf:
+		outf.write(str(soup))
+
 
 def readToTxt(file):
 	f = open(file, 'r')
