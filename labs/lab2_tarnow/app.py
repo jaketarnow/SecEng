@@ -91,9 +91,8 @@ def login():
 			url = 'http://0.0.0.0:8081/api/login'
 			jData = {'username' : username_form, 'crypto' : hashedPwd}
 			headers = {'Content-type': 'application/json'}
-			print "printing data at position 2"
 			try:
-				uResponse = requests.post(url, data=json.dumps(jData), headers=headers)
+				uResponse = requests.post(url, data=jData, headers=headers)
 				print(uResponse.json())
 			except requests.ConnectionError:
 				return "Connection Error"

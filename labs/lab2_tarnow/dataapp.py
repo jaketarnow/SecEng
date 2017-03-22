@@ -56,12 +56,21 @@ def signup():
 
 @app.route('/api/login', methods=['GET', 'POST'])
 def login():
-	print request
-	data = request.get_json()
-	print "in login!!!"
-	crypti = data['crypto'].decode('utf-8')
+	data = request.data
+	print "data"
+	myList = request.data.split("&")
+	userz = myList[0].split("=")
+	usern = userz[1]
+	crpt = myList[1].split("=")
+	crypti = (crpt[1]).decode('utf-8')
 	print crypti
-	usern = data['username']
+	# print request.data.get('username')
+	# print "args"
+	# print request.args
+	# print "json"
+	# print request.get_json()
+	# print data.get('crypto')
+	# print data.get('username')
 	if crypti != None:
 		print "IN HERERRERER"
 		try:
