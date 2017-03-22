@@ -54,24 +54,31 @@ def signup():
 		jsonify = {'success': False}
 	return json.dumps(jsonify, indent=4)
 
-@app.route('/api/login', methods=['POST'])
+@app.route('/api/login', methods=['GET', 'POST'])
 def login():
-	print "in login!!!"
+	print request
 	data = request.get_json()
-	if 'crypto' in data:
+	print "in login!!!"
+	crypti = data['crypto'].decode('utf-8')
+	print crypti
+	usern = data['username']
+	if crypti != None:
+		print "IN HERERRERER"
 		try:
-			sql = "SELECT * FROM users WHERE username = '%s'" %(data['username'])
+			sql = "SELECT * FROM users WHERE username = '%s'" %(usern)
 			cur.execute(sql)
 			db.commit()
 		except MySQLdb.IntegrityError:
 			raise ServerError("Invalid")
-			for row in cur.fetchall():
-				decryptPwd = RSA.importKey(row[4]).encrypt(data['crypto'], None)
-				# print decryptPwd[0]
-				# print decryptPwd[0] == row[2]
-				if decryptPwd[0] == row[2]:
-					jsonify = {'success': True,'cookie': row[3]}
-					return json.dumps(jsonify, indent=4)
+		for row in cur.fetchall():
+			decryptPwd = RSA.importKey(row[4]).encrypt(crypti, None)
+			# print decryptPwd[0]
+			# print decryptPwd[0] == row[2]
+			print "IN FOR LOOPP!!"
+			if decryptPwd[0] == row[2]:
+				print "IT IS A SUCCESS!!!!!!!!!!!!"
+				jsonify = {'success': True,'cookie': row[3]}
+				return json.dumps(jsonify, indent=4)
 
 def verifyCookie(userCookie):
 	try:

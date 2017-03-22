@@ -8,6 +8,7 @@ import Cookie
 import datetime
 import json
 import requests
+import codecs
 
 #context = SSL.Context(SSL.SSLv23_METHOD)
 #cer = os.path.join(os.path.dirname(__file__), 'certificate.crt')
@@ -84,12 +85,14 @@ def login():
 			newkey = readToTxt(key)
 			# Decrypt with private key, then encrypt with public key
 			hashedPwd = RSA.importKey(newkey).decrypt(hashIt(password_form))
-
+			print hashedPwd
+			# encode hashedPwd 
 			url = 'http://0.0.0.0:8081/api/login'
-			data = {'username' : username_form, 'crypto' : hashedPwd}
+			jData = {'username' : username_form, 'crypto' : hashedPwd.encode('utf-8')}
 			headers = {'Content-type': 'application/json'}
+			print "printing data at position 2"
 			try:
-				uResponse = requests.post(url, data=json.dumps(data), headers=headers)
+				uResponse = requests.post(url, data=json.dumps(jData), headers=headers)
 				print(uResponse.json())
 			except requests.ConnectionError:
 				return "Connection Error"
