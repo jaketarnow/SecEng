@@ -4,45 +4,14 @@
 <title>Login</title>
 </head>
 <body align="center">
-    <form action="/login" method="POST" onsubmit="encryptData()">
+    <form action="/login" method="POST">
         Username: <input type="text" name="username" required>
         <br>
         Password: <input type="password" name="password" id="pw" required>
         <br>
         Encryption Key: <input type="file" name="key" id="key" accept=".pem" required>
         <br>
-        <input type="hidden" name="decryption" id="decryption">
         <input type="Submit" value="Login">
     </form>
 </body>
-<script type="text/javascript" src="http://code.jquery.com/jquery-1.8.3.min.js"></script>
-<script type="text/javascript" src="{{ url_for('static', filename='jsencrypt-master/bin/jsencrypt.min.js') }}"></script>
-<script type="text/javascript" src="{{ url_for('static', filename='jsSHA-2.2.0/src/sha256.js') }}"></script>
-<script type="text/javascript" >
-function encryptData() {
-    var decrypt = new JSEncrypt();
-    //decrypt.setPrivateKey(document.getElementById("key"));
-    decrypt.setPrivateKey($('#key').val());
-    console.log(decrypt);
-    if (decrypt != null) {
-        console.log("true");
-    }
-
-    var pw = document.getElementById("pw");
-    console.log(pw.value);
-	var hash = hashIt(pw);
-	console.log(hash);
-
-	var encryptedMessage = decrypt.decrypt(hash);
-    console.log(encryptedMessage);
-	document.getElementById("decryption").value = encryptedMessage;
-}
-
-function hashIt(text) {
-    var shaObj = new jsSHA("SHA-256", "TEXT");
-    shaObj.update(text.value);
-    var hash = shaObj.getHash("HEX");
-    return hash;
-}
-</script>
 </html>

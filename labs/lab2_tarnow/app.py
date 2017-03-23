@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, e
 from OpenSSL import SSL
 from Crypto.PublicKey import RSA
 import hashlib
+import base64
 import MySQLdb
 import os
 import Cookie
@@ -10,6 +11,7 @@ import json
 import requests
 import codecs
 import bs4
+import re
 
 #context = SSL.Context(SSL.SSLv23_METHOD)
 #cer = os.path.join(os.path.dirname(__file__), 'certificate.crt')
@@ -87,12 +89,13 @@ def login():
 			# Decrypt with private key, then encrypt with public key
 			hashedPwd = RSA.importKey(newkey).decrypt(hashIt(password_form))
 			print hashedPwd
-			# encode hashedPwd 
+			# encode hashedPwd with base64 to preserve hash
 			url = 'http://0.0.0.0:8081/api/login'
-			jData = {'username' : username_form, 'crypto' : hashedPwd}
+			jData = {'username' : username_form, 'crypto' : base64.b64encode(hashedPwd)}
 			headers = {'Content-type': 'application/json'}
 			try:
-				uResponse = requests.post(url, data=jData, headers=headers)
+				# build request with data as json object
+				uResponse = requests.post(url, data=json.dumps(jData), headers=headers)
 				print(uResponse.json())
 			except requests.ConnectionError:
 				return "Connection Error"
@@ -109,14 +112,16 @@ def login():
 	return render_template("login.html")
 
 def editHTML(user_name):
-	with open("/templates/index.html") as inf:
+	with open("templates/index.html") as inf:
 		txt = inf.read()
 		soup = bs4.BeautifulSoup(txt)
 	# create new elem
-	original_tag = soup.p
-	original_tag.append(user_name)
+	var = 'I have your identity ' + user_name.title() + ' !!!'
+	for i in soup.find_all(class_='test'):
+		i.string = var
+	print soup
 	# save file again
-	with open("/templates/index.html", "w") as outf:
+	with open("templates/index.html", "w") as outf:
 		outf.write(str(soup))
 
 
@@ -124,6 +129,11 @@ def readToTxt(file):
 	f = open(file, 'r')
 	pem = f.read()
 	return pem
+
+def writeToFile(encrypted):
+	f = open('encrypt.txt', 'w')
+	f.write(encrypted)
+	f.close()
 
 def hashIt(hashme):
 	hashed = hashme

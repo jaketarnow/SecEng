@@ -2,12 +2,15 @@ from flask import Flask, render_template, request, redirect, url_for, session, e
 from OpenSSL import SSL
 from Crypto.PublicKey import RSA
 import hashlib
+import base64
 import MySQLdb
 import os
 import Cookie
 import datetime
 import json
 import requests
+import urllib2
+import re
 
 app = Flask(__name__)
 
@@ -21,10 +24,6 @@ class ServerError(Exception):pass
 
 @app.route('/api/userInfo/<userID>', methods=['GET'])
 def main(userID):
-	print "in main"
-	print userID
-	# Fix with personalized cookie - for Step 4
-	# Verify if cookie exists in db
 	user_id = verifyCookie(userID)
 	if user_id:
 		return_info = {'success': True}
@@ -34,9 +33,8 @@ def main(userID):
 
 @app.route('/api/signup', methods=['POST'])
 def signup():
-	print "in here"
 	data = request.get_json()
-	print data
+	# if all information is in data then grab it and create cookie on signup
 	if 'username' in data and 'password' in data and 'key' in data:
 		username = data['username']
 		pw = data['password']
@@ -56,22 +54,19 @@ def signup():
 
 @app.route('/api/login', methods=['GET', 'POST'])
 def login():
-	data = request.data
-	print "data"
-	myList = request.data.split("&")
-	userz = myList[0].split("=")
-	usern = userz[1]
-	crpt = myList[1].split("=")
-	crypti = (crpt[1]).decode('utf-8')
-	print crypti
-	# print request.data.get('username')
-	# print "args"
-	# print request.args
-	# print "json"
-	# print request.get_json()
-	# print data.get('crypto')
-	# print data.get('username')
-	if crypti != None:
+	data = request.get_json()
+	usern = data['username']
+	encryptedHash = data['crypto']
+	# debugging everything, but it works now!
+	# print "username"
+	# print usern
+	# print "encrypted hash"
+	# print encryptedHash
+	# print "encrypted hash decoded"
+	encryptedHash = base64.b64decode(encryptedHash)
+	print encryptedHash
+
+	if encryptedHash != None:
 		print "IN HERERRERER"
 		try:
 			sql = "SELECT * FROM users WHERE username = '%s'" %(usern)
@@ -80,12 +75,13 @@ def login():
 		except MySQLdb.IntegrityError:
 			raise ServerError("Invalid")
 		for row in cur.fetchall():
-			decryptPwd = RSA.importKey(row[4]).encrypt(crypti, None)
+			decryptPwd = RSA.importKey(row[4]).encrypt(encryptedHash, None)
+			# print decryptPwd
+			# print "IN FOR LOOPP!!"
 			# print decryptPwd[0]
-			# print decryptPwd[0] == row[2]
-			print "IN FOR LOOPP!!"
+			# print row[2]
 			if decryptPwd[0] == row[2]:
-				print "IT IS A SUCCESS!!!!!!!!!!!!"
+				# print "IT IS A SUCCESS!!!!!!!!!!!!"
 				jsonify = {'success': True,'cookie': row[3]}
 				return json.dumps(jsonify, indent=4)
 
