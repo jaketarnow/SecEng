@@ -125,8 +125,8 @@ def editHTML(user_name):
 		outf.write(str(soup))
 
 
-def readToTxt(file):
-	f = open(file, 'r')
+def readToTxt(keysFile):
+	f = open(os.path.abspath(keysFile), 'r')
 	pem = f.read()
 	return pem
 
