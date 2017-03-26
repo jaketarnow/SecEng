@@ -21,10 +21,6 @@ app = Flask(__name__)
 app.secret_key = os.urandom(24).encode('hex')
 
 if __name__ == "__main__":
-	db = MySQLdb.connect(host="localhost", user="root", passwd="root", db="cs683")
-	cur = db.cursor()
-
-class ServerError(Exception):pass
 
 @app.route('/')
 def main():
@@ -80,35 +76,32 @@ def signup():
 
 @app.route('/login', methods=["GET", "POST"])
 def login():
-	try:
-		if request.method == "POST":
-			username_form = request.form["username"]
-			password_form = request.form["password"]
-			key = request.form["key"]
-			newkey = readToTxt(key)
-			# Decrypt with private key, then encrypt with public key
-			hashedPwd = RSA.importKey(newkey).decrypt(hashIt(password_form))
-			print hashedPwd
-			# encode hashedPwd with base64 to preserve hash
-			url = 'http://0.0.0.0:8081/api/login'
-			jData = {'username' : username_form, 'crypto' : base64.b64encode(hashedPwd)}
-			headers = {'Content-type': 'application/json'}
-			try:
-				# build request with data as json object
-				uResponse = requests.post(url, data=json.dumps(jData), headers=headers)
-				print(uResponse.json())
-			except requests.ConnectionError:
-				return "Connection Error"
-			Jresponse = uResponse.text
-			data = json.loads(Jresponse)
+	if request.method == "POST":
+		username_form = request.form["username"]
+		password_form = request.form["password"]
+		key = request.form["key"]
+		newkey = readToTxt(key)
+		# Decrypt with private key, then encrypt with public key
+		hashedPwd = RSA.importKey(newkey).decrypt(hashIt(password_form))
+		print hashedPwd
+		# encode hashedPwd with base64 to preserve hash
+		url = 'http://0.0.0.0:8081/api/login'
+		jData = {'username' : username_form, 'crypto' : base64.b64encode(hashedPwd)}
+		headers = {'Content-type': 'application/json'}
+		try:
+			# build request with data as json object
+			uResponse = requests.post(url, data=json.dumps(jData), headers=headers)
+			print(uResponse.json())
+		except requests.ConnectionError:
+			return "Connection Error"
+		Jresponse = uResponse.text
+		data = json.loads(Jresponse)
 
-			if data['success'] == True:
-				editHTML(username_form)
-				resp = make_response(redirect(url_for("main")))
-				resp.set_cookie('userID', data['cookie'], max_age=30)
-			return resp
-	except ServerError as se:
-		error = str(se)
+		if data['success'] == True:
+			editHTML(username_form)
+			resp = make_response(redirect(url_for("main")))
+			resp.set_cookie('userID', data['cookie'], max_age=30)
+		return resp
 	return render_template("login.html")
 
 def editHTML(user_name):
