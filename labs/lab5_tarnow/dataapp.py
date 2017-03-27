@@ -22,9 +22,11 @@ if __name__ == "__main__":
 
 class ServerError(Exception):pass
 
-@app.route('/api/userInfo/<userID>', methods=['GET'])
+@app.route('/api/userInfo', methods=['GET'])
 def main(userID):
-	user_id = verifyCookie(userID)
+	data = request.get_json()
+	user_idz = data['user_cookie']
+	user_id = verifyCookie(user_idz)
 	if user_id:
 		return_info = {'success': True}
 	else:

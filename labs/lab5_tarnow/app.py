@@ -3,7 +3,6 @@ from OpenSSL import SSL
 from Crypto.PublicKey import RSA
 import hashlib
 import base64
-import MySQLdb
 import os
 import Cookie
 import datetime
@@ -30,9 +29,13 @@ def main():
 
 	if user_id != None:
 		print "in hererererererereer"
-		url = 'http://0.0.0.0:8081/api/userInfo/' + user_id
+		url = 'http://10.0.0.19:8081/api/userInfo'
+		data = {'user_cookie' : user_id}
+		headers = {'Content-type': 'application/json'}
+		
 		try:
-			uResponse = requests.get(url)
+			uResponse = requests.get(url, data=json.dumps(data), headers=headers)
+			print(uResponse.json())
 		except requests.ConnectionError:
 			return "Connection Error"
 		Jresponse = uResponse.text
@@ -58,7 +61,7 @@ def signup():
 	newpubkey = readToTxt(pub_key)
 
 	# now send to data server!
-	url = 'http://0.0.0.0:8081/api/signup'
+	url = 'http://10.0.0.19:8081/api/signup'
 	data = {'username' : username_form, 'password' : password_form, 'key' : newpubkey}
 	headers = {'Content-type': 'application/json'}
 	try:
@@ -85,7 +88,7 @@ def login():
 		hashedPwd = RSA.importKey(newkey).decrypt(hashIt(password_form))
 		print hashedPwd
 		# encode hashedPwd with base64 to preserve hash
-		url = 'http://0.0.0.0:8081/api/login'
+		url = 'http://10.0.0.19:8081/api/login'
 		jData = {'username' : username_form, 'crypto' : base64.b64encode(hashedPwd)}
 		headers = {'Content-type': 'application/json'}
 		try:
