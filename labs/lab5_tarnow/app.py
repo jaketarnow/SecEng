@@ -16,13 +16,10 @@ import re
 #cer = os.path.join(os.path.dirname(__file__), 'certificate.crt')
 #key = os.path.join(os.path.dirname(__file__), 'privateKey.key')
 app = Flask(__name__)
-
 app.secret_key = os.urandom(24).encode('hex')
 
 @app.route('/')
 def main():
-	# Fix with personalized cookie - for Step 4
-	# Verify if cookie exists in db
 	user_id = request.cookies.get('userID')
 
 	if user_id != None:
@@ -137,7 +134,6 @@ def hashIt(hashme):
 def logout():
 	editHTML(" ")
 	resp = make_response(redirect(url_for("main")))
-	# When logout, set expires to 0, so it is not valid anymore
 	resp.set_cookie('userID', expires=0)
 	return resp
 

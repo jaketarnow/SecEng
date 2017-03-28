@@ -14,7 +14,6 @@ import re
 import time
 
 app = Flask(__name__)
-
 app.secret_key = os.urandom(24).encode('hex')
 
 if __name__ == "__main__":
@@ -22,8 +21,6 @@ if __name__ == "__main__":
 	cur = db.cursor()
 
 class ServerError(Exception):pass
-# To adjust the cookie, and make sure users can't do same name 
-# fix user name confusion 
 
 @app.route('/api/userInfo', methods=['POST'])
 def main():
@@ -43,16 +40,13 @@ def main():
 @app.route('/api/signup', methods=['POST'])
 def signup():
 	data = request.get_json()
-	# if all information is in data then grab it and create cookie on signup
 	if 'username' in data and 'password' in data and 'key' in data:
 		username = data['username']
 		pw = data['password']
 		key = data['key']
 		ts = time.time()
-		server_secret = privKeyGeneration()
 		# Cookie is constructed with privateKeyGen and username and time stamp 
 		cookie_create = hashlib.sha256(str(app.secret_key) + username + str(ts)).hexdigest()
-
 		# first check to make sure there is no username that is same already
 		try:
 			sql = "SELECT * FROM users WHERE username = '%s'" %(username)
@@ -105,23 +99,6 @@ def login():
 				json_cookie = {'user':usern, 'cookie':cookie_create, 'timestamp':str(ts)}
 				jsonify = {'success': True, 'cookie': json_cookie}
 				return json.dumps(jsonify, indent=4)
-
-def privKeyGeneration():
-	key = RSA.generate(2048)
-	f = open('serversecretKey.pem', 'w')
-	f.write(key.exportKey('PEM'))
-	f.close()
-	return key
-
-def getServerSecret():
-	f = open('serversecretKey.pem', 'r')
-	key = RSA.importKey(f.read())
-	return key
-
-def getPubKey():
-	f = open('serversecretKey.pem', 'r')
-	key = RSA.importKey(f.read())
-	return key.publickey()
 
 def verifyCookie(userCookie):
 	cookiez = userCookie['user_cookie']
