@@ -13,9 +13,6 @@ import codecs
 import bs4
 import re
 
-#context = SSL.Context(SSL.SSLv23_METHOD)
-#cer = os.path.join(os.path.dirname(__file__), 'certificate.crt')
-#key = os.path.join(os.path.dirname(__file__), 'privateKey.key')
 app = Flask(__name__)
 
 app.secret_key = os.urandom(24).encode('hex')
@@ -24,25 +21,43 @@ app.secret_key = os.urandom(24).encode('hex')
 def main():
 	return render_template("index.html")
 
-@app.route('/send', methods=["POST"])
-def send():
-	message = request.form["message"]
-	alice_privKey = AliceKeyGen()
-	alice_pubKey = getAlicePubKey()
-	# encrypt it
-	encryptedMessage = RSA.importKey(alice_pubKey).decrypt(message)
-	# create new shared key for bob and alice
-	shared_key = sharedKeyGen()
+@app.route('/sendKey', methods=["POST"])
+def getBobKey():
+	data = request.get_json()
+	if data['name'] == "Bob":
+		bobPubKey = data['PubKey']
 
-
-	# now send to Bob
-	url = 'http://0.0.0.0:8081/bob/send'
-	data = {'name' : 'Alice', 'message' : encryptedMessage, 'sharedKey' : shared_key, 'AlicePubKey' : alice_pubKey}
+	url = 'http://0.0.0.0:8080/send'
+	data = {'name' : 'Bob', 'PubKey' : bobPubKey}
 	headers = {'Content-type': 'application/json'}
 	try:
 		uResponse = requests.post(url, data=json.dumps(data), headers=headers)
 	except requests.ConnectionError:
 		return "Connection Error"
+
+@app.route('/send', methods=["POST"])
+def send():
+	data = request.get_json()
+	if data['name'] == "Bob":
+		bob_pubKey = data['PubKey']
+
+	alice_privKey = AliceKeyGen()
+	alice_pubKey = getAlicePubKey()
+	# create new shared key for bob and alice
+	shared_key = sharedKeyGen()
+	message = "Alice"
+	# encrypt it
+	encryptedMessage = RSA.importKey(bob_pubKey).decrypt(message, shared_key)
+
+	# now send to Bob
+	url = 'http://0.0.0.0:8081/bob/send'
+	data = {'name' : 'Alice', 'message' : encryptedMessage, 'alicePubKey' : alice_pubKey}
+	headers = {'Content-type': 'application/json'}
+	try:
+		uResponse = requests.post(url, data=json.dumps(data), headers=headers)
+	except requests.ConnectionError:
+		return "Connection Error"
+
 	Jresponse = uResponse.text
 	data = json.loads(Jresponse)
 	print data['bobResponse']
@@ -56,12 +71,53 @@ def send():
 		resp.set_cookie('userID', 'nope', expires=0)
 	return resp
 
+@app.route('/alice/roundtwo', methods=["POST"])
+def roundtwo():
+	data = request.get_json()
+	if data['name'] == "Bob":
+		msg = data['message']
+		shared_key = getSharedPubKey()
+		nonce = RSA.importKey(shared_key).encrypt(msg, None)
+		shared_keyAll = getsharedKey()
+		# Once Alice has decrypted this, she then sends new message
+		alice_privKey = getAliceKey()
+		encryptedNonce = RSA.importKey(alice_privKey).decrypt(nonce)
+		messageToSendWithSharedKey = RSA.importKey(shared_key).decrypt(encryptedNonce, shared_keyAll)
+
+		# now send to Bob
+		url = 'http://0.0.0.0:8081/bob/send/roundtwo'
+		data = {'name' : 'Alice', 'message' : messageToSendWithSharedKey}
+		headers = {'Content-type': 'application/json'}
+		try:
+			uResponse = requests.post(url, data=json.dumps(data), headers=headers)
+		except requests.ConnectionError:
+			return "Connection Error"
+
+@app.route('/alice/final', methods=["POST"])
+def getAnswer():
+	data = request.get_json()
+	if data['name'] == "Bob":
+		answer = data['message']
+		if answer['success'] == True:
+			return True
+		else:
+			return False
+
+# http://stackoverflow.com/questions/5590170/what-is-the-standard-method-for-generating-a-nonce-in-python
+def generate_nonce(length=8):
+    # """Generate pseudorandom number."""
+    return ''.join([str(random.randint(0, 9)) for i in range(length)])
 
 def sharedKeyGen():
 	key = RSA.generate(2048)
 	f = open('sharedKey.pem', 'w')
 	f.write(key.exportKey('PEM'))
 	f.close()
+	return key
+
+def getsharedKey():
+	f = open('sharedKey.pem', 'r')
+	key = RSA.importKey(f.read())
 	return key
 
 def getSharedPubKey():
@@ -81,22 +137,15 @@ def getAlicePubKey():
 	key = RSA.importKey(f.read())
 	return key.publickey()
 
+def getAliceKey():
+	f = open('aliceKey.pem', 'r')
+	key = RSA.importKey(f.read())
+	return key
+
 def readToTxt(keysFile):
 	f = open(os.path.abspath(keysFile), 'r')
 	pem = f.read()
 	return pem
-
-def writeToFile(encrypted):
-	f = open('encrypt.txt', 'w')
-	f.write(encrypted)
-	f.close()
-
-def hashIt(hashme):
-	hashed = hashme
-	hash_object = hashlib.sha256(hashed)
-	hex_dig = hash_object.hexdigest()
-	hashed = hex_dig
-	return hashed
 
 if __name__ == "__main__":
 	#context = (cer, key)
