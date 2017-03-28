@@ -11,6 +11,7 @@ import json
 import requests
 import urllib2
 import re
+import time
 
 app = Flask(__name__)
 
@@ -21,9 +22,11 @@ if __name__ == "__main__":
 	cur = db.cursor()
 
 class ServerError(Exception):pass
+# To adjust the cookie, and make sure users can't do same name 
+# fix user name confusion 
 
 @app.route('/api/userInfo', methods=['GET'])
-def main(userID):
+def main():
 	data = request.get_json()
 	user_idz = data['user_cookie']
 	user_id = verifyCookie(user_idz)
@@ -41,15 +44,28 @@ def signup():
 		username = data['username']
 		pw = data['password']
 		key = data['key']
-		cookie_create = hashlib.sha256(username + pw).hexdigest()
+		ts = time.time()
+		server_secret = privKeyGeneration()
+		cookie_create = hashlib.sha256(str(server_secret) + username + str(ts)).hexdigest()
 
+		# first check to make sure there is no username that is same already
 		try:
-			sql = "INSERT INTO users (username, password, pubkey, cookies) VALUES ('%s', '%s', '%s', '%s')" %(username, pw, key, cookie_create)
+			sql = "SELECT * FROM users WHERE username = '%s'" %(username)
 			cur.execute(sql)
 			db.commit()
 		except MySQLdb.IntegrityError:
-			raise ServerError("Invalid sql insert")
-		jsonify = {'success': True,'cookie': cookie_create}
+			raise ServerError("Invalid")
+		row_count = cur.rowcount
+		if row_count == 0:
+			try:
+				sql = "INSERT INTO users (username, password, pubkey, cookies) VALUES ('%s', '%s', '%s', '%s')" %(username, pw, key, cookie_create)
+				cur.execute(sql)
+				db.commit()
+			except MySQLdb.IntegrityError:
+				raise ServerError("Invalid sql insert")
+			jsonify = {'success': True,'cookie': cookie_create}
+		else:
+			jsonify = {'success': False}
 	else:
 		jsonify = {'success': False}
 	return json.dumps(jsonify, indent=4)
@@ -86,6 +102,18 @@ def login():
 				# print "IT IS A SUCCESS!!!!!!!!!!!!"
 				jsonify = {'success': True,'cookie': row[3]}
 				return json.dumps(jsonify, indent=4)
+
+def privKeyGeneration():
+	key = RSA.generate(2048)
+	f = open('serversecretKey.pem', 'w')
+	f.write(key.exportKey('PEM'))
+	f.close()
+	return key
+
+def getPubKey():
+	f = open('serversecretKey.pem', 'r')
+	key = RSA.importKey(f.read())
+	return key.publickey()
 
 def verifyCookie(userCookie):
 	try:

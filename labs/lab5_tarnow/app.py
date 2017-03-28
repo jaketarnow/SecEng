@@ -19,8 +19,6 @@ app = Flask(__name__)
 
 app.secret_key = os.urandom(24).encode('hex')
 
-if __name__ == "__main__":
-
 @app.route('/')
 def main():
 	# Fix with personalized cookie - for Step 4
@@ -29,25 +27,29 @@ def main():
 
 	if user_id != None:
 		print "in hererererererereer"
-		url = 'http://10.0.0.19:8081/api/userInfo'
-		data = {'user_cookie' : user_id}
-		headers = {'Content-type': 'application/json'}
-		
-		try:
-			uResponse = requests.get(url, data=json.dumps(data), headers=headers)
-			print(uResponse.json())
-		except requests.ConnectionError:
-			return "Connection Error"
-		Jresponse = uResponse.text
-		data = json.loads(Jresponse)
-		print data
-		print "in hererererererereer after data"
-		if data['success'] == True:
-			print "success is true"
-			return render_template("index.html")
+
+		if user_id == 'nope':
+			return render_template("nameindex.html")
 		else:
-			print "success is fasle 1"
-			return render_template("signup.html")
+			url = 'http://0.0.0.0:8081/api/userInfo'
+			data = {'user_cookie' : user_id}
+			headers = {'Content-type': 'application/json'}
+
+			try:
+				uResponse = requests.get(url, data=json.dumps(data), headers=headers)
+				print(uResponse.json())
+			except requests.ConnectionError:
+				return "Connection Error"
+			Jresponse = uResponse.text
+			data = json.loads(Jresponse)
+			print data
+			print "in hererererererereer after data"
+			if data['success'] == True:
+				print "success is true"
+				return render_template("index.html")
+			else:
+				print "success is fasle 1"
+				return render_template("signup.html")
 	else:
 		print "success is fasle 2"
 		return render_template("signup.html")
@@ -61,20 +63,22 @@ def signup():
 	newpubkey = readToTxt(pub_key)
 
 	# now send to data server!
-	url = 'http://10.0.0.19:8081/api/signup'
+	url = 'http://0.0.0.0:8081/api/signup'
 	data = {'username' : username_form, 'password' : password_form, 'key' : newpubkey}
 	headers = {'Content-type': 'application/json'}
 	try:
 		uResponse = requests.post(url, data=json.dumps(data), headers=headers)
-		print(uResponse.json())
 	except requests.ConnectionError:
 		return "Connection Error"
 	Jresponse = uResponse.text
 	data = json.loads(Jresponse)
-
+	print data
 	if data['success'] == True:
 		resp = make_response(redirect(url_for("main")))
 		resp.set_cookie('userID', data['cookie'], max_age=30)
+	else:
+		resp = make_response(redirect(url_for("main")))
+		resp.set_cookie('userID', 'nope', max_age=10)
 	return resp
 
 @app.route('/login', methods=["GET", "POST"])
@@ -88,7 +92,7 @@ def login():
 		hashedPwd = RSA.importKey(newkey).decrypt(hashIt(password_form))
 		print hashedPwd
 		# encode hashedPwd with base64 to preserve hash
-		url = 'http://10.0.0.19:8081/api/login'
+		url = 'http://0.0.0.0:8081/api/login'
 		jData = {'username' : username_form, 'crypto' : base64.b64encode(hashedPwd)}
 		headers = {'Content-type': 'application/json'}
 		try:
