@@ -24,8 +24,6 @@ def main():
 	# Fix with personalized cookie - for Step 4
 	# Verify if cookie exists in db
 	user_id = request.cookies.get('userID')
-	print "in main of app server"
-	print user_id
 
 	if user_id != None:
 		if user_id == 'nope':
@@ -41,16 +39,11 @@ def main():
 				return "Connection Error"
 			Jresponse = uResponse.text
 			data = json.loads(Jresponse)
-			print data
-			print "in hererererererereer after data"
 			if data['success'] == True:
-				print "success is true"
 				return render_template("index.html")
 			else:
-				print "success is fasle 1"
 				return render_template("signupfail.html")
 	else:
-		print "user_id must be None"
 		return render_template("signup.html")
 
 @app.route('/signup', methods=["POST"])
@@ -71,19 +64,14 @@ def signup():
 		return "Connection Error"
 	Jresponse = uResponse.text
 	data = json.loads(Jresponse)
-	print "response data in app"
-	print data
-	print "response data in app -- cookie"
-	print data['cookie']
-	cookie_toset = data['cookie']
-	print data['success']
 
 	if data['success'] == True:
+		cookie_toset = data['cookie']
 		resp = make_response(redirect(url_for("main")))
 		resp.set_cookie('userID', json.dumps(cookie_toset), max_age=30)
 	else:
 		resp = make_response(redirect(url_for("main")))
-		resp.set_cookie('userID', 'nope', expires=0)
+		resp.set_cookie('userID', 'nope')
 	return resp
 
 @app.route('/login', methods=["GET", "POST"])
@@ -95,7 +83,6 @@ def login():
 		newkey = readToTxt(key)
 		# Decrypt with private key, then encrypt with public key
 		hashedPwd = RSA.importKey(newkey).decrypt(hashIt(password_form))
-		print hashedPwd
 		# encode hashedPwd with base64 to preserve hash
 		url = 'http://0.0.0.0:8081/api/login'
 		jData = {'username' : username_form, 'crypto' : base64.b64encode(hashedPwd)}
@@ -103,7 +90,6 @@ def login():
 		try:
 			# build request with data as json object
 			uResponse = requests.post(url, data=json.dumps(jData), headers=headers)
-			print(uResponse.json())
 		except requests.ConnectionError:
 			return "Connection Error"
 		Jresponse = uResponse.text
@@ -112,7 +98,7 @@ def login():
 		if data['success'] == True:
 			editHTML(username_form)
 			resp = make_response(redirect(url_for("main")))
-			resp.set_cookie('userID', data['cookie'], max_age=30)
+			resp.set_cookie('userID', json.dumps(data['cookie']), max_age=30)
 		return resp
 	return render_template("login.html")
 
@@ -124,7 +110,6 @@ def editHTML(user_name):
 	var = 'I have your identity ' + user_name.title() + ' !!!'
 	for i in soup.find_all(class_='test'):
 		i.string = var
-	print soup
 	# save file again
 	with open("templates/index.html", "w") as outf:
 		outf.write(str(soup))

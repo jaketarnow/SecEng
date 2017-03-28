@@ -28,8 +28,6 @@ class ServerError(Exception):pass
 @app.route('/api/userInfo', methods=['POST'])
 def main():
 	user_idz = request.get_data()
-	print "In the main of data server"
-	print user_idz
 
 	if user_idz is not None:
 		user_idz = json.loads(user_idz)
@@ -53,7 +51,7 @@ def signup():
 		ts = time.time()
 		server_secret = privKeyGeneration()
 		# Cookie is constructed with privateKeyGen and username and time stamp 
-		cookie_create = hashlib.sha256(str(server_secret) + username + str(ts)).hexdigest()
+		cookie_create = hashlib.sha256(str(app.secret_key) + username + str(ts)).hexdigest()
 
 		# first check to make sure there is no username that is same already
 		try:
@@ -63,7 +61,7 @@ def signup():
 		except MySQLdb.IntegrityError:
 			raise ServerError("Invalid")
 		row_count = cur.rowcount
-		if row_count == 0:
+		if row_count != 1:
 			try:
 				sql = "INSERT INTO users (username, password, pubkey, cookies) VALUES ('%s', '%s', '%s', '%s')" %(username, pw, key, cookie_create)
 				cur.execute(sql)
@@ -71,8 +69,6 @@ def signup():
 			except MySQLdb.IntegrityError:
 				raise ServerError("Invalid sql insert")
 			json_cookie = {'user':username, 'cookie':cookie_create, 'timestamp':str(ts)}
-			print "in signup of data server"
-			print json_cookie
 			jsonify = {'success': True,'cookie': json_cookie}
 		else:
 			jsonify = {'success': False}
@@ -86,10 +82,8 @@ def login():
 	usern = data['username']
 	encryptedHash = data['crypto']
 	encryptedHash = base64.b64decode(encryptedHash)
-	print encryptedHash
 
 	if encryptedHash != None:
-		print "IN HERERRERER for login of data server"
 		try:
 			sql = "SELECT * FROM users WHERE username = '%s'" %(usern)
 			cur.execute(sql)
@@ -98,13 +92,18 @@ def login():
 			raise ServerError("Invalid")
 		for row in cur.fetchall():
 			decryptPwd = RSA.importKey(row[4]).encrypt(encryptedHash, None)
-			# print decryptPwd
-			# print "IN FOR LOOPP!!"
-			# print decryptPwd[0]
-			# print row[2]
 			if decryptPwd[0] == row[2]:
-				# print "IT IS A SUCCESS!!!!!!!!!!!!"
-				jsonify = {'success': True,'cookie': row[3]}
+				ts = time.time()
+				cookie_create = hashlib.sha256(str(app.secret_key) + usern + str(ts)).hexdigest()
+
+				try:
+					sql = "UPDATE users SET cookies = '%s' WHERE username = '%s'" %(cookie_create, usern)
+					cur.execute(sql)
+					db.commit()
+				except MySQLdb.IntegrityError:
+					raise ServerError("Invalid sql insert")
+				json_cookie = {'user':usern, 'cookie':cookie_create, 'timestamp':str(ts)}
+				jsonify = {'success': True, 'cookie': json_cookie}
 				return json.dumps(jsonify, indent=4)
 
 def privKeyGeneration():
@@ -125,17 +124,13 @@ def getPubKey():
 	return key.publickey()
 
 def verifyCookie(userCookie):
-	print userCookie
-	cookiez = userCookie["user_cookie"]
-	print cookiez
-	cookie_user = cookiez[2]
-	print cookie_user
-	cookie_ts = cookiez[0]
-	print cookie_ts
-	cookie_cookiez = cookiez[1]
-	print cookie_cookiez
+	cookiez = userCookie['user_cookie']
+	cookiez = json.loads(cookiez)
+	cookie_user = cookiez['user']
+	cookie_ts = cookiez['timestamp']
+	cookie_cookiez = cookiez['cookie']
 	secret_key = getServerSecret()
-	cook_check = checkCookieCred(cookie_cookiez, cookie_user, cookie_ts, secret_key)
+	cook_check = checkCookieCred(cookie_cookiez, cookie_user, cookie_ts, app.secret_key)
 
 	if cook_check:	
 		try:
@@ -154,15 +149,11 @@ def checkCookieCred(cookie, username, timestamp, secret_svkey):
 	# recreate the hash..rehash the server secret + username + claimed ts
 	# then compare that to actual cookie
 	# if they match that means that ts was used to create it
-	validate_cookie = hashlib.sha256(str(secret_svkey) + username + timestamp).hexdigest()
+	validate_cookie = hashlib.sha256(str(secret_svkey) + username + str(timestamp)).hexdigest()
 	curr_time = time.time()
-	print "in check cookie cred of data server"
-	print str(curr_time)
-	print timestamp
-	ts_offset = timestamp + 30
-	print str(ts_offset)
+	ts_offset = int(float(timestamp) + 30)
 	
-	if str(ts_offset) < ts:
+	if str(ts_offset) > str(curr_time):
 		if validate_cookie == cookie:
 			return True
 		else:
