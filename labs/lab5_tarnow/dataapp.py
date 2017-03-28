@@ -25,14 +25,19 @@ class ServerError(Exception):pass
 # To adjust the cookie, and make sure users can't do same name 
 # fix user name confusion 
 
-@app.route('/api/userInfo', methods=['GET'])
+@app.route('/api/userInfo', methods=['POST'])
 def main():
 	user_idz = request.get_data()
 	print "In the main of data server"
 	print user_idz
-	user_id = verifyCookie(user_idz)
-	if user_id:
-		return_info = {'success': True}
+
+	if user_idz is not None:
+		user_idz = json.loads(user_idz)
+		user_id = verifyCookie(user_idz)
+		if user_id:
+			return_info = {'success': True}
+		else:
+			return_info = {'success': False}
 	else:
 		return_info = {'success': False}
 	return json.dumps(return_info, indent=4)
@@ -120,22 +125,21 @@ def getPubKey():
 	return key.publickey()
 
 def verifyCookie(userCookie):
-	print "in verify cookie of data server"
-	print type(userCookie)
-	cookie_data = userCookie["user_cookie"]
-	print cookie_data
-	cookie_user = cookie_data[2]["user"]
+	print userCookie
+	cookiez = userCookie["user_cookie"]
+	print cookiez
+	cookie_user = cookiez[2]
 	print cookie_user
-	cookie_ts = cookie_data[0]["timestamp"]
+	cookie_ts = cookiez[0]
 	print cookie_ts
-	cookie_cookiez = cookie_data[1]["cookie"]
+	cookie_cookiez = cookiez[1]
 	print cookie_cookiez
 	secret_key = getServerSecret()
 	cook_check = checkCookieCred(cookie_cookiez, cookie_user, cookie_ts, secret_key)
 
 	if cook_check:	
 		try:
-			sql = "SELECT username FROM users WHERE cookies = '%s'" %(userCookie)
+			sql = "SELECT username FROM users WHERE cookies = '%s'" %(cookie_cookiez)
 			cur.execute(sql)
 			db.commit()
 			if cur.rowcount > 0:

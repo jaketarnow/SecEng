@@ -36,18 +36,19 @@ def main():
 			headers = {'Content-type': 'application/json'}
 
 			try:
-				uResponse = requests.get(url, data=json.dumps(data), headers=headers)
+				uResponse = requests.post(url, data=json.dumps(data), headers=headers)
 			except requests.ConnectionError:
 				return "Connection Error"
 			Jresponse = uResponse.text
 			data = json.loads(Jresponse)
+			print data
 			print "in hererererererereer after data"
 			if data['success'] == True:
 				print "success is true"
 				return render_template("index.html")
 			else:
 				print "success is fasle 1"
-				return render_template("signup.html")
+				return render_template("signupfail.html")
 	else:
 		print "user_id must be None"
 		return render_template("signup.html")
@@ -75,10 +76,11 @@ def signup():
 	print "response data in app -- cookie"
 	print data['cookie']
 	cookie_toset = data['cookie']
+	print data['success']
 
 	if data['success'] == True:
 		resp = make_response(redirect(url_for("main")))
-		resp.set_cookie('userID', cookie_toset, max_age=30)
+		resp.set_cookie('userID', json.dumps(cookie_toset), max_age=30)
 	else:
 		resp = make_response(redirect(url_for("main")))
 		resp.set_cookie('userID', 'nope', expires=0)
