@@ -27,8 +27,9 @@ class ServerError(Exception):pass
 
 @app.route('/api/userInfo', methods=['GET'])
 def main():
-	data = request.get_json()
-	user_idz = data['user_cookie']
+	user_idz = request.get_json()
+	print "In the main of data server"
+	print user_idz
 	user_id = verifyCookie(user_idz)
 	if user_id:
 		return_info = {'success': True}
@@ -65,6 +66,7 @@ def signup():
 			except MySQLdb.IntegrityError:
 				raise ServerError("Invalid sql insert")
 			json_cookie = {'user':username, 'cookie':cookie_create, 'timestamp':str(ts)}
+			print "in signup of data server"
 			print json_cookie
 			jsonify = {'success': True,'cookie': json_cookie}
 		else:
@@ -78,17 +80,11 @@ def login():
 	data = request.get_json()
 	usern = data['username']
 	encryptedHash = data['crypto']
-	# debugging everything, but it works now!
-	# print "username"
-	# print usern
-	# print "encrypted hash"
-	# print encryptedHash
-	# print "encrypted hash decoded"
 	encryptedHash = base64.b64decode(encryptedHash)
 	print encryptedHash
 
 	if encryptedHash != None:
-		print "IN HERERRERER"
+		print "IN HERERRERER for login of data server"
 		try:
 			sql = "SELECT * FROM users WHERE username = '%s'" %(usern)
 			cur.execute(sql)
@@ -124,12 +120,17 @@ def getPubKey():
 	return key.publickey()
 
 def verifyCookie(userCookie):
+	print "in verify cookie of data server"
 	print type(userCookie)
-	cookie_data = json.loads(userCookie)
-	cookie_user = cookie_data['user']
-	cookie_ts = cookie_data['timestamp']
-	cookie_cookiez = cookie_data['cookie']
-
+	cookie_data = userCookie["user_cookie"]
+	print cookie_data
+	cookie_user = cookie_data[2]["user"]
+	print cookie_user
+	cookie_ts = cookie_data[0]["timestamp"]
+	print cookie_ts
+	cookie_cookiez = cookie_data[1]["cookie"]
+	print cookie_cookiez
+	secret_key = getServerSecret()
 	cook_check = checkCookieCred(cookie_cookiez, cookie_user, cookie_ts, secret_key)
 
 	if cook_check:	
@@ -151,6 +152,7 @@ def checkCookieCred(cookie, username, timestamp, secret_svkey):
 	# if they match that means that ts was used to create it
 	validate_cookie = hashlib.sha256(str(secret_svkey) + username + timestamp).hexdigest()
 	curr_time = time.time()
+	print "in check cookie cred of data server"
 	print str(curr_time)
 	print timestamp
 	ts_offset = timestamp + 30

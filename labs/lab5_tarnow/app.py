@@ -24,11 +24,10 @@ def main():
 	# Fix with personalized cookie - for Step 4
 	# Verify if cookie exists in db
 	user_id = request.cookies.get('userID')
+	print "in main of app server"
 	print user_id
 
 	if user_id != None:
-		print "in hererererererereer"
-
 		if user_id == 'nope':
 			return render_template("nameindex.html")
 		else:
@@ -38,12 +37,10 @@ def main():
 
 			try:
 				uResponse = requests.get(url, data=json.dumps(data), headers=headers)
-				print(uResponse.json())
 			except requests.ConnectionError:
 				return "Connection Error"
 			Jresponse = uResponse.text
 			data = json.loads(Jresponse)
-			print data
 			print "in hererererererereer after data"
 			if data['success'] == True:
 				print "success is true"
@@ -52,7 +49,7 @@ def main():
 				print "success is fasle 1"
 				return render_template("signup.html")
 	else:
-		print "success is fasle 2"
+		print "user_id must be None"
 		return render_template("signup.html")
 
 @app.route('/signup', methods=["POST"])
@@ -73,7 +70,9 @@ def signup():
 		return "Connection Error"
 	Jresponse = uResponse.text
 	data = json.loads(Jresponse)
+	print "response data in app"
 	print data
+	print "response data in app -- cookie"
 	print data['cookie']
 
 	if data['success'] == True:
