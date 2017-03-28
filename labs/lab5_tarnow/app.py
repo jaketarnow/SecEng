@@ -74,10 +74,11 @@ def signup():
 	print data
 	print "response data in app -- cookie"
 	print data['cookie']
+	cookie_toset = data['cookie']
 
 	if data['success'] == True:
 		resp = make_response(redirect(url_for("main")))
-		resp.set_cookie('userID', str(data['cookie']), max_age=30)
+		resp.set_cookie('userID', cookie_toset, max_age=30)
 	else:
 		resp = make_response(redirect(url_for("main")))
 		resp.set_cookie('userID', 'nope', expires=0)

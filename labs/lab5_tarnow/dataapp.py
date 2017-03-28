@@ -27,7 +27,7 @@ class ServerError(Exception):pass
 
 @app.route('/api/userInfo', methods=['GET'])
 def main():
-	user_idz = request.get_json()
+	user_idz = request.get_data()
 	print "In the main of data server"
 	print user_idz
 	user_id = verifyCookie(user_idz)
