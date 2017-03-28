@@ -46,6 +46,7 @@ def signup():
 		key = data['key']
 		ts = time.time()
 		server_secret = privKeyGeneration()
+		# Cookie is constructed with privateKeyGen and username and time stamp 
 		cookie_create = hashlib.sha256(str(server_secret) + username + str(ts)).hexdigest()
 
 		# first check to make sure there is no username that is same already
@@ -63,7 +64,9 @@ def signup():
 				db.commit()
 			except MySQLdb.IntegrityError:
 				raise ServerError("Invalid sql insert")
-			jsonify = {'success': True,'cookie': cookie_create}
+			json_cookie = {'user':username, 'cookie':cookie_create, 'timestamp':str(ts)}
+			print json_cookie
+			jsonify = {'success': True,'cookie': json_cookie}
 		else:
 			jsonify = {'success': False}
 	else:
@@ -110,21 +113,54 @@ def privKeyGeneration():
 	f.close()
 	return key
 
+def getServerSecret():
+	f = open('serversecretKey.pem', 'r')
+	key = RSA.importKey(f.read())
+	return key
+
 def getPubKey():
 	f = open('serversecretKey.pem', 'r')
 	key = RSA.importKey(f.read())
 	return key.publickey()
 
 def verifyCookie(userCookie):
-	try:
-		sql = "SELECT username FROM users WHERE cookies = '%s'" %(userCookie)
-		cur.execute(sql)
-		db.commit()
-		if cur.rowcount > 0:
+	print type(userCookie)
+	cookie_data = json.loads(userCookie)
+	cookie_user = cookie_data['user']
+	cookie_ts = cookie_data['timestamp']
+	cookie_cookiez = cookie_data['cookie']
+
+	cook_check = checkCookieCred(cookie_cookiez, cookie_user, cookie_ts, secret_key)
+
+	if cook_check:	
+		try:
+			sql = "SELECT username FROM users WHERE cookies = '%s'" %(userCookie)
+			cur.execute(sql)
+			db.commit()
+			if cur.rowcount > 0:
+				return True
+		except MySQLdb.IntegrityError:
+			raise ServerError("Invalid sql insert")
+		return False
+	else:
+		return False
+
+def checkCookieCred(cookie, username, timestamp, secret_svkey):
+	# recreate the hash..rehash the server secret + username + claimed ts
+	# then compare that to actual cookie
+	# if they match that means that ts was used to create it
+	validate_cookie = hashlib.sha256(str(secret_svkey) + username + timestamp).hexdigest()
+	curr_time = time.time()
+	print str(curr_time)
+	print timestamp
+	ts_offset = timestamp + 30
+	print str(ts_offset)
+	
+	if str(ts_offset) < ts:
+		if validate_cookie == cookie:
 			return True
-	except MySQLdb.IntegrityError:
-		raise ServerError("Invalid sql insert")
-	return False
+		else:
+			return False
 
 if __name__ == "__main__":
 	app.run(host='0.0.0.0', port=8081, debug = True)

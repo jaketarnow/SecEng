@@ -24,6 +24,7 @@ def main():
 	# Fix with personalized cookie - for Step 4
 	# Verify if cookie exists in db
 	user_id = request.cookies.get('userID')
+	print user_id
 
 	if user_id != None:
 		print "in hererererererereer"
@@ -73,12 +74,14 @@ def signup():
 	Jresponse = uResponse.text
 	data = json.loads(Jresponse)
 	print data
+	print data['cookie']
+
 	if data['success'] == True:
 		resp = make_response(redirect(url_for("main")))
-		resp.set_cookie('userID', data['cookie'], max_age=30)
+		resp.set_cookie('userID', str(data['cookie']), max_age=30)
 	else:
 		resp = make_response(redirect(url_for("main")))
-		resp.set_cookie('userID', 'nope', max_age=10)
+		resp.set_cookie('userID', 'nope', expires=0)
 	return resp
 
 @app.route('/login', methods=["GET", "POST"])
