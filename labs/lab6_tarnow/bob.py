@@ -12,110 +12,83 @@ import requests
 import codecs
 import bs4
 import re
+import random
 
 app = Flask(__name__)
 
 app.secret_key = os.urandom(24).encode('hex')
-
-@app.route('/sendKey', methods=["POST"])
-def sendKey():
-	bob_privKey = BobKeyGen()
-	bob_pubKey = getBobPubKey()
-	
-	# send public key to Alice
-	url = 'http://0.0.0.0:8080/sendKey'
-	data = {'name' : 'Bob', 'PubKey' : bob_pubKey}
-	headers = {'Content-type': 'application/json'}
-	try:
-		uResponse = requests.post(url, data=json.dumps(data), headers=headers)
-	except requests.ConnectionError:
-		return "Connection Error"
-	Jresponse = uResponse.text
-	data = json.loads(Jresponse)
-	print data['success']
-
-	if data['success'] == True:
-		resp = make_response(redirect(url_for("main")))
-		resp.set_cookie('userID', 'yup', expires=10)
-	else:
-		resp = make_response(redirect(url_for("main")))
-		resp.set_cookie('userID', 'nope', expires=0)
-	return resp
-
-@app.route('/bob/send', methods=['POST'])
-def getMessage():
-	data = request.get_json()
-	sender_name = data['name']
-	encrypted_msg = data['message']
-	alice_pubkey = data['alicePubKey']
-	bob_privKey = BobKeyGen()
-	bob_pubKey = getBobPubKey()
-
-	decrypt = RSA.importKey(bob_privKey).encrypt(encrypted_msg, None)
-	print decrypt
-	print decrypt[0]
-	print decrypt[1]
-	sharedKey = decrypt[1]
-	# generate a random number and encrypt with shared key
-	old_nonce = generate_nonce()
-	encrypted_noncemsg = RSA.importKey(sharedKey).decrypt(old_nonce)
-
-	url = 'http://0.0.0.0:8080/alice/roundtwo'
-	data = {'name' : 'Bob', 'message' : encrypted_noncemsg}
-	headers = {'Content-type': 'application/json'}
-	try:
-		uResponse = requests.post(url, data=json.dumps(data), headers=headers)
-	except requests.ConnectionError:
-		return "Connection Error"
-
-@app.route('/bob/send/roundtwo', methods=['POST'])
-def getRoundTwo():
-	data = request.get_json()
-	sender_name = data['name']
-	if sender_name == "Alice":
-		msg_to_decrypt = data['message']
-		decrypt = RSA.importKey(sharedKey).encrypt(msg_to_decrypt, None)
-		nonce = RSA.importKey(alice_pubkey).encrypt(decrypt, None)
-
-		if nonce == old_nonce:
-			jsonify = {"success" : True}
-		else:
-			jsonify = {"success" : False}
-	url = 'http://0.0.0.0:8080/alice/final'
-	data = {'name' : 'Bob', 'message' : jsonify}
-	headers = {'Content-type': 'application/json'}
-	try:
-		uResponse = requests.post(url, data=json.dumps(data), headers=headers)
-	except requests.ConnectionError:
-		return "Connection Error"
 
 # http://stackoverflow.com/questions/5590170/what-is-the-standard-method-for-generating-a-nonce-in-python
 def generate_nonce(length=8):
     # """Generate pseudorandom number."""
     return ''.join([str(random.randint(0, 9)) for i in range(length)])
 
-def getSharedPubKey(key):
-	key = RSA.importKey(key)
-	return key.publickey()
+nonce = generate_nonce()
+shared_key = None
 
-def BobKeyGen():
-	key = RSA.generate(2048)
-	f = open('bobKey.pem', 'w')
-	f.write(key.exportKey('PEM'))
-	f.close()
-	return key
+alice_pubKey = RSA.importKey(open(os.path.abspath("alicePubKey.pem"), 'r').read())
+bob_pubKey = RSA.importKey(open(os.path.abspath("bobPubKey.pem"), 'r').read())
+bob_privKey = RSA.importKey(open(os.path.abspath("bobKey.pem"), 'r').read())
 
-def getBobPubKey():
-	f = open('bobKey.pem', 'r')
-	key = RSA.importKey(f.read())
-	return key.publickey()
+@app.route('/bob/send', methods=['GET', 'POST'])
+def send():
+	data = request.get_json()
+	encrypt_init = data['message']
+	encrypt_init = base64.b64decode(encrypt_init)
+	decrypt_init = bob_privKey.decrypt(encrypt_init)
+	print decrypt_init
+	# name = json_decrypt_init['name']
+	# shared_key = json_decrypt_init['sharedKey']
+
+	# if msg == 'Alice':
+	# 	nonce = generate_nonce()
+	# 	encrypted_nonce = RSA.importKey(shared_key).encrypt(nonce, None)
+	# 	jsonify = {'message': encrypted_nonce[0]}
+	# else:
+	jsonify = {'message': 'False'}
+	return json.dumps(jsonify, indent=4)
+
+
+@app.route('/bob/nonceSend', methods=['GET', 'POST'])
+def nonceSend():
+	data = request.get_json()
+	encrypt_nonce = data['message']
+	decrypt_init = RSA.importKey(shared_key).decrypt(encrypt_nonce)
+	msg = decrypt_init[0]
+	alice_encrypt_none = decrypt_init[1]
+
+	if msg == 'Alice':
+		alice_pubKey = getAlicePubKey()
+		decrypt_nonce = RSA.importKey(alice_pubKey).decrypt(alice_encrypt_none)
+		new_nonce = decrypt_nonce[0]
+		# if new_nonce is same as nonce that Bob created, then send success!
+		if new_nonce == nonce:
+			jsonify = {'message': 'True'}
+		else:
+			jsonify = {'message': 'False'}
+	else:
+		jsonify = {'message': 'False'}
+	return json.dumps(jsonify, indent=4)
 
 def readToTxt(keysFile):
-	f = open(os.path.abspath(keysFile), 'r')
+	f = open(str(keysFile), 'r')
 	pem = f.read()
 	return pem
 
+def getBobPubKey():
+	f = open('bobPubKey.pem', 'r')
+	key = RSA.importKey(f.read())
+	return key.publickey()
+
+def getAlicePubKey():
+	f = open('aliceKey.pem', 'r')
+	key = RSA.importKey(f.read())
+	return key.publickey()
+
+def getBobKey():
+	f = open('bobKey.pem', 'r')
+	key = RSA.importKey(f.read())
+	return key
+
 if __name__ == "__main__":
-	#context = (cer, key)
-	#app.run(host='0.0.0.0', debug = True, ssl_context=context)
 	app.run(host='0.0.0.0', port=8081, debug = True)

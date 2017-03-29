@@ -16,121 +16,89 @@ import re
 app = Flask(__name__)
 
 app.secret_key = os.urandom(24).encode('hex')
+alice_pubKey = RSA.importKey(open(os.path.abspath("alicePubKey.pem"), 'r').read())
+alice_privKey = RSA.importKey(open(os.path.abspath("aliceKey.pem"), 'r').read())
+bob_pubKey = RSA.importKey(open(os.path.abspath("bobPubKey.pem"), 'r').read())
 
 @app.route('/')
 def main():
-	return render_template("index.html")
-
-@app.route('/sendKey', methods=["POST"])
-def getBobKey():
-	data = request.get_json()
-	if data['name'] == "Bob":
-		bobPubKey = data['PubKey']
-
-	url = 'http://0.0.0.0:8080/send'
-	data = {'name' : 'Bob', 'PubKey' : bobPubKey}
-	headers = {'Content-type': 'application/json'}
-	try:
-		uResponse = requests.post(url, data=json.dumps(data), headers=headers)
-	except requests.ConnectionError:
-		return "Connection Error"
+	success = request.cookies.get('success')
+	if success is None:
+		return render_template("send.html")
+	else:
+		if success == 'True':
+			return render_template("success.html")
+		else:
+			return render_template("tryagain.html")
 
 @app.route('/send', methods=["POST"])
 def send():
-	data = request.get_json()
-	if data['name'] == "Bob":
-		bob_pubKey = data['PubKey']
-
-	alice_privKey = AliceKeyGen()
-	alice_pubKey = getAlicePubKey()
-	# create new shared key for bob and alice
+	msg = request.form["message"]
 	shared_key = sharedKeyGen()
-	message = "Alice"
-	# encrypt it
-	encryptedMessage = RSA.importKey(bob_pubKey).decrypt(message, shared_key)
+	# encrypt with bob public key (message, shared_key)
+	print str(shared_key)
+	json_objectInit = {"name" : msg, "sharedKey" : str(shared_key)}
+	encrypt_init = bob_pubKey.encrypt(json.dumps(json_objectInit), None)
 
-	# now send to Bob
 	url = 'http://0.0.0.0:8081/bob/send'
-	data = {'name' : 'Alice', 'message' : encryptedMessage, 'alicePubKey' : alice_pubKey}
+	data = {'message' : base64.b64encode(encrypt_init[0])}
 	headers = {'Content-type': 'application/json'}
+
 	try:
 		uResponse = requests.post(url, data=json.dumps(data), headers=headers)
 	except requests.ConnectionError:
 		return "Connection Error"
-
 	Jresponse = uResponse.text
 	data = json.loads(Jresponse)
-	print data['bobResponse']
-	print data['success']
+	print data
+	# encrypted_nonce = data['message']
 
-	if data['success'] == True:
-		resp = make_response(redirect(url_for("main")))
-		resp.set_cookie('userID', 'yup', expires=10)
-	else:
-		resp = make_response(redirect(url_for("main")))
-		resp.set_cookie('userID', 'nope', expires=0)
+	# if encrypted_nonce != 'False':
+	# 	new_nonceSend = decryptWithSK(shared_key, encrypted_nonce)
+
+	# 	url = 'http://0.0.0.0:8081/bob/nonceSend'
+	# 	data = {'message' : new_nonceSend}
+	# 	headers = {'Content-type': 'application/json'}
+	# 	try:
+	# 		nResponse = requests.post(url, data=json.dumps(data), headers=headers)
+	# 	except requests.ConnectionError:
+	# 		return "Connection Error"
+	# 	finalResp = nResponse.text
+	# 	data = json.loads(finalResp)
+	# 	success = data['message']
+
+	# 	if success == 'True':
+	# 		resp = make_response(redirect(url_for("main")))
+	# 		resp.set_cookie('success', json.dumps(data['message']), max_age=30)
+	# 	else:
+	# 		resp = make_response(redirect(url_for("main")))
+	# 		resp.set_cookie('success', 'False')
+	# else:
+	# 	resp = make_response(redirect(url_for("main")))
+	# 	resp.set_cookie('success', 'False')
+	resp = make_response(redirect(url_for("main")))
 	return resp
 
-@app.route('/alice/roundtwo', methods=["POST"])
-def roundtwo():
-	data = request.get_json()
-	if data['name'] == "Bob":
-		msg = data['message']
-		shared_key = getSharedPubKey()
-		nonce = RSA.importKey(shared_key).encrypt(msg, None)
-		shared_keyAll = getsharedKey()
-		# Once Alice has decrypted this, she then sends new message
-		alice_privKey = getAliceKey()
-		encryptedNonce = RSA.importKey(alice_privKey).decrypt(nonce)
-		messageToSendWithSharedKey = RSA.importKey(shared_key).decrypt(encryptedNonce, shared_keyAll)
+def decryptWithSK(shared_key, nonce):
+	decrypt_nonce = RSA.importKey(shared_key).decrypt(nonce)
+	alice_priv = getAliceKey()
+	new_msg = "Alice"
+	# now need to "sign" or encrypt with Alice's private key
+	encrypt_withAlicePriv = RSA.importKey(alice_priv).encrypt(nonce, None)
+	json_objectAlice = {"name" : new_msg, "encrypted" : encrypt_withAlicePriv}
+	encrypt_recv_nonce = RSA.importKey(shared_key).encrypt(json_objectAlice, None)
+	return encrypt_recv_nonce
 
-		# now send to Bob
-		url = 'http://0.0.0.0:8081/bob/send/roundtwo'
-		data = {'name' : 'Alice', 'message' : messageToSendWithSharedKey}
-		headers = {'Content-type': 'application/json'}
-		try:
-			uResponse = requests.post(url, data=json.dumps(data), headers=headers)
-		except requests.ConnectionError:
-			return "Connection Error"
 
-@app.route('/alice/final', methods=["POST"])
-def getAnswer():
-	data = request.get_json()
-	if data['name'] == "Bob":
-		answer = data['message']
-		if answer['success'] == True:
-			return True
-		else:
-			return False
-
-# http://stackoverflow.com/questions/5590170/what-is-the-standard-method-for-generating-a-nonce-in-python
-def generate_nonce(length=8):
-    # """Generate pseudorandom number."""
-    return ''.join([str(random.randint(0, 9)) for i in range(length)])
+def readToTxt(keysFile):
+	f = open(os.path.abspath(keysFile), 'r')
+	pem = f.read()
+	return pem
 
 def sharedKeyGen():
 	key = RSA.generate(2048)
-	f = open('sharedKey.pem', 'w')
-	f.write(key.exportKey('PEM'))
-	f.close()
-	return key
-
-def getsharedKey():
-	f = open('sharedKey.pem', 'r')
-	key = RSA.importKey(f.read())
-	return key
-
-def getSharedPubKey():
-	f = open('sharedKey.pem', 'r')
-	key = RSA.importKey(f.read())
-	return key.publickey()
-
-def AliceKeyGen():
-	key = RSA.generate(2048)
-	f = open('aliceKey.pem', 'w')
-	f.write(key.exportKey('PEM'))
-	f.close()
-	return key
+	f = key.exportKey('PEM')
+	return f
 
 def getAlicePubKey():
 	f = open('aliceKey.pem', 'r')
@@ -142,12 +110,5 @@ def getAliceKey():
 	key = RSA.importKey(f.read())
 	return key
 
-def readToTxt(keysFile):
-	f = open(os.path.abspath(keysFile), 'r')
-	pem = f.read()
-	return pem
-
 if __name__ == "__main__":
-	#context = (cer, key)
-	#app.run(host='0.0.0.0', debug = True, ssl_context=context)
 	app.run(host='0.0.0.0', port=8080, debug = True)
