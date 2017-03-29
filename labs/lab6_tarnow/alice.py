@@ -38,19 +38,28 @@ def send():
 	# encrypt with bob public key (message, shared_key)
 	print str(shared_key)
 	json_objectInit = {"name" : msg, "sharedKey" : str(shared_key)}
-	encrypt_init = bob_pubKey.encrypt(json.dumps(json_objectInit), None)
+	test = "HEY HEY HEY"
+	encrypt_init = alice_pubKey.encrypt(test, None)
+	print encrypt_init[0]
+	print "WELL THIS SUCKS"
+	decrypt_init = alice_privKey.decrypt(encrypt_init[0])
+	print type(decrypt_init)
+	print decrypt_init
 
-	url = 'http://0.0.0.0:8081/bob/send'
-	data = {'message' : base64.b64encode(encrypt_init[0])}
-	headers = {'Content-type': 'application/json'}
 
-	try:
-		uResponse = requests.post(url, data=json.dumps(data), headers=headers)
-	except requests.ConnectionError:
-		return "Connection Error"
-	Jresponse = uResponse.text
-	data = json.loads(Jresponse)
-	print data
+
+
+	# url = 'http://0.0.0.0:8081/bob/send'
+	# data = {'message' : base64.b64encode(encrypt_init[0])}
+	# headers = {'Content-type': 'application/json'}
+
+	# try:
+	# 	uResponse = requests.post(url, data=json.dumps(data), headers=headers)
+	# except requests.ConnectionError:
+	# 	return "Connection Error"
+	# Jresponse = uResponse.text
+	# data = json.loads(Jresponse)
+	# print data
 	# encrypted_nonce = data['message']
 
 	# if encrypted_nonce != 'False':
