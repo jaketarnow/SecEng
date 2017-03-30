@@ -12,6 +12,7 @@ import requests
 import codecs
 import bs4
 import re
+import sys
 
 app = Flask(__name__)
 
@@ -36,18 +37,14 @@ def send():
 	msg = request.form["message"]
 	shared_key = sharedKeyGen()
 	# encrypt with bob public key (message, shared_key)
-	print str(shared_key)
-	json_objectInit = {"name" : msg, "sharedKey" : str(shared_key)}
-	test = "HEY HEY HEY"
-	encrypt_init = alice_pubKey.encrypt(test, None)
-	print encrypt_init[0]
-	print "WELL THIS SUCKS"
-	decrypt_init = alice_privKey.decrypt(encrypt_init[0])
+	json_objectInit = {"name" : str(msg), "sharedKey" : str(shared_key)}
+	print shared_key
+	json_objectInit = {"sharedKey" : base64.b64encode(shared_key)}
+	print json_objectInit
+	encrypt_init = alice_pubKey.encrypt(json.dumps((str(json_objectInit))), None)
+	decrypt_init = alice_privKey.decrypt(base64.b64decode(encrypt_init[0]))
 	print type(decrypt_init)
 	print decrypt_init
-
-
-
 
 	# url = 'http://0.0.0.0:8081/bob/send'
 	# data = {'message' : base64.b64encode(encrypt_init[0])}
