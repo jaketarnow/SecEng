@@ -26,6 +26,7 @@ app.secret_key = os.urandom(24).encode('hex')
 alice_pubKey = RSA.importKey(open(os.path.abspath("alicePubKey.pem"), 'r').read())
 alice_privKey = RSA.importKey(open(os.path.abspath("aliceKey.pem"), 'r').read())
 bob_pubKey = RSA.importKey(open(os.path.abspath("bobPubKey.pem"), 'r').read())
+charlie_pubKey = RSA.importKey(open(os.path.abspath("charliePubKey.pem"), 'r').read())
 
 @app.route('/')
 def main():
@@ -46,9 +47,6 @@ def send():
 	shared_key = sharedKeyGen()     
 	json_objectInit = json.dumps({"name" : str(msg), "sharedKey" : shared_key})
 	encrypt_init = bob_pubKey.encrypt(json_objectInit, None)
-	# decrypt_init = alice_privKey.decrypt(encrypt_init[0])
-	# decrypt_init = json.loads(decrypt_init)
-	# print decrypt_init
 
 	url = 'http://0.0.0.0:8081/bob/send'
 	data = {'message' : base64.b64encode(encrypt_init[0])}
@@ -73,6 +71,61 @@ def send():
 		encrypted_new_nonceSend = encrypt_aes(json_objectInit, shared_key)
 
 		url = 'http://0.0.0.0:8081/bob/nonceSend'
+		data = {'message' : encrypted_new_nonceSend}
+		headers = {'Content-type': 'application/json'}
+		try:
+			nResponse = requests.post(url, data=json.dumps(data), headers=headers)
+		except requests.ConnectionError:
+			return "Connection Error"
+		finalResp = nResponse.text
+		data = json.loads(finalResp)
+		success = data['message']
+		print success
+
+		if success:
+			print "IN FINAL 1st IF"
+			resp = make_response(redirect(url_for("main")))
+			resp.set_cookie('success', json.dumps(data['message']), max_age=30)
+		else:
+			print "IN FINAL 1st ELSE"
+			resp = make_response(redirect(url_for("main")))
+			resp.set_cookie('success', 'False')
+	else:
+		print "IN FINAL 2nd ELSE"
+		resp = make_response(redirect(url_for("main")))
+		resp.set_cookie('success', 'False')
+	return resp
+
+@app.route('/mim', methods=["POST"])
+def mim():
+	msg = request.form["message"]     
+	charlie_shared_key = sharedKeyGen()     
+	json_objectInit = json.dumps({"name" : str(msg), "sharedKey" : charlie_shared_key})
+	encrypt_init = charlie_pubKey.encrypt(json_objectInit, None)
+
+	url = 'http://0.0.0.0:8082/charlie/send'
+	data = {'message' : base64.b64encode(encrypt_init[0])}
+	headers = {'Content-type': 'application/json'}
+
+	try:
+		uResponse = requests.post(url, data=json.dumps(data), headers=headers)
+	except requests.ConnectionError:
+		return "Connection Error"
+	Jresponse = uResponse.text
+	data = json.loads(Jresponse)
+	print data
+	encrypted_nonce = data['message']
+	print encrypted_nonce
+
+	if encrypted_nonce != 'False':
+		new_nonceSend = decrypt_aes(encrypted_nonce, charlie_shared_key)
+		print new_nonceSend
+		print str(new_nonceSend)
+		signed = alice_privKey.sign(str(new_nonceSend), None)
+		json_objectInit = json.dumps({"name" : str(msg), "newNonce" : signed[0]})
+		encrypted_new_nonceSend = encrypt_aes(json_objectInit, charlie_shared_key)
+
+		url = 'http://0.0.0.0:8082/charlie/nonceSend'
 		data = {'message' : encrypted_new_nonceSend}
 		headers = {'Content-type': 'application/json'}
 		try:
