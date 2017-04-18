@@ -29,9 +29,7 @@ def login():
 	pwd = data['password']
 
 	if pwd != None:
-		sql = "SELECT * FROM users WHERE username = '%s' AND password = '%s'" % (usern, pwd)
-		print sql
-		cur.execute(sql)
+		cur.execute("""SELECT * FROM users WHERE username = %s AND password = %s""", (usern, pwd))
 		db.commit()
 		rows = cur.fetchall()
 		everything = str(cur.fetchall)
