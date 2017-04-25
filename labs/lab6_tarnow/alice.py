@@ -31,8 +31,6 @@ charlie_pubKey = RSA.importKey(open(os.path.abspath("charliePubKey.pem"), 'r').r
 @app.route('/')
 def main():
 	success = request.cookies.get('success')
-	print "IN MAIN!!"
-	print success
 	if success is None:
 		return render_template("send.html")
 	else:
@@ -48,6 +46,7 @@ def send():
 	json_objectInit = json.dumps({"name" : str(msg), "sharedKey" : shared_key})
 	encrypt_init = bob_pubKey.encrypt(json_objectInit, None)
 
+	# could of used an argument instead of going to /bob/send
 	url = 'http://0.0.0.0:8081/bob/send'
 	data = {'message' : base64.b64encode(encrypt_init[0])}
 	headers = {'Content-type': 'application/json'}
@@ -157,7 +156,8 @@ def readToTxt(keysFile):
 	return pem
 
 def sharedKeyGen():
-	# create something similar to 
+	# create something similar to key
+	# used more for random password...
 	n = 16
 	return "".join(choice(lowercase) for i in range(n))
 

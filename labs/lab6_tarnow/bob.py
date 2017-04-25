@@ -34,6 +34,7 @@ bob_privKey = RSA.importKey(open(os.path.abspath("bobKey.pem"), 'r').read())
 
 @app.route('/bob/send', methods=['GET', 'POST'])
 def send():
+	# make into session variable instead of global!!
 	global shared_key
 	global nonce
 	data = request.get_data()
@@ -46,7 +47,7 @@ def send():
 	msg = json_decrypt_init['name']
 	shared_key = json_decrypt_init['sharedKey']
 
-	if msg == 'Alice':
+	if msg is not None:
 		nonce = generate_nonce()
 		print nonce
 		encrypted_nonce = encrypt_aes(nonce, shared_key)
@@ -67,12 +68,15 @@ def nonceSend():
 	decrypt_init = decrypt_aes(encrypt_nonce, shared_key)
 	print decrypt_init
 	decrypt_init = json.loads(decrypt_init)
+
+	# public key lookup of key based on the name
+
 	msg = decrypt_init['name']
 	print msg
 	new_nonce = decrypt_init['newNonce']
 	print new_nonce
-
-	if msg == 'Alice':
+	# use msg as key for lookup of public key
+	if msg is not None:
 		alice_pubKey = getAlicePubKey()
 		new_nonce = (long(new_nonce),)
 		decrypt_nonce = alice_pubKey.verify(nonce, new_nonce)

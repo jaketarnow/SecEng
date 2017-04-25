@@ -46,7 +46,7 @@ def login():
 			return "Connection Error"
 		Jresponse = uResponse.text
 		data = json.loads(Jresponse)
-
+		
 		if data['success'] == True:
 			editHTML(data['answer'])
 			resp = make_response(redirect(url_for("main")))

@@ -27,18 +27,25 @@ def login():
 	data = request.get_json()
 	usern = data['username']
 	pwd = data['password']
-
+	print pwd
 	if pwd != None:
 		cur.execute("""SELECT * FROM users WHERE username = %s AND password = %s""", (usern, pwd))
+		# HOMEWORK - understand commit does beyond to build safe site
 		db.commit()
 		rows = cur.fetchall()
-		everything = str(cur.fetchall)
-		for row in rows:
-			if pwd == row[1]:
-				jsonify = {'success': True, 'answer': 'here'}
-			else:
-				jsonify = {'success': False, 'answer': 'oops'}
+		print rows
+		if not rows:
+			print "in here???"
+			jsonify = {'success': False, 'answer': 'oops'}
 			return json.dumps(jsonify, indent=4)
+		else:
+			everything = str(cur.fetchall)
+			for row in rows:
+				if pwd == row[1]:
+					jsonify = {'success': True, 'answer': 'here'}
+				else:
+					jsonify = {'success': False, 'answer': 'oops'}
+				return json.dumps(jsonify, indent=4)
 
 if __name__ == "__main__":
 	app.run(host='0.0.0.0', port=8081, debug = True)

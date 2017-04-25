@@ -66,7 +66,7 @@ def send():
 	msg = json_decrypt_init['name']
 	shared_key_withAlice = json_decrypt_init['sharedKey']
 
-	if msg == 'Alice':
+	if msg is not None:
 		new_sharedKey_withBob = sharedKeyGen()
 		# sends bob new shared key
 		json_objectInit = json.dumps({"name" : str(msg), "sharedKey" : new_sharedKey_withBob})
@@ -112,7 +112,7 @@ def nonceSend():
 	new_nonce = decrypt_init['newNonce']
 	print new_nonce
 
-	if msg == 'Alice':
+	if msg is not None:
 		# charlie encrypts with shared key of bob and signature
 		json_objectInit = json.dumps({"name" : str(msg), "newNonce" : new_nonce})
 		encrypted_new_nonceSend = encrypt_aes(json_objectInit, new_sharedKey_withBob)
